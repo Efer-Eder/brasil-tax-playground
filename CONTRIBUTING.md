@@ -28,7 +28,6 @@ npm run build
 ## Commits e PRs
 
 - A branch `main` é protegida: não aceita force push nem exclusão, e um PR só entra com os checks do CI passando (lint, typecheck, testes e build no Ubuntu e no Windows, E2E e gitleaks).
-
 - Mensagens no padrão [Conventional Commits](https://www.conventionalcommits.org/pt-br/) (`feat:`, `fix:`, `docs:`, `test:`, `chore:`...).
 - PRs pequenos e focados, com descrição do que mudou e como foi testado.
 - Atualize `CHANGELOG.md` (seção *Não lançado*) quando a mudança for visível para quem usa.
