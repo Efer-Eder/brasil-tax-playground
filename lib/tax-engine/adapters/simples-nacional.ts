@@ -9,7 +9,7 @@ import type { EngineDescriptor } from "../types";
  */
 export const simplesNacionalDescriptor: EngineDescriptor = {
   id: "simples-nacional",
-  nome: "Calculadora RTC — Simples Nacional",
+  nome: "Calculadora RTC · Simples Nacional",
   descricao: "API REST oficial que calcula CBS e IBS nas operações do Simples Nacional.",
   upstreamRepo: "https://github.com/ReceitaFederal/calculadora-rtc-simples-nacional",
   upstreamReferencia: "1.0.2 (a926d5a)",

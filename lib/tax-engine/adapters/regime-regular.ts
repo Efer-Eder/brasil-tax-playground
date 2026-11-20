@@ -15,7 +15,7 @@ import type { EngineDescriptor, EngineVersion } from "../types";
 
 export const regimeRegularDescriptor: EngineDescriptor = {
   id: "regime-regular",
-  nome: "Calculadora RTC — Regime Regular",
+  nome: "Calculadora RTC · Regime Regular",
   descricao:
     "API REST oficial (Java/Spring Boot) que calcula CBS, IBS e Imposto Seletivo nas operações do regime regular.",
   upstreamRepo: "https://github.com/ReceitaFederal/calculadora-rtc-regime-regular",

@@ -1,5 +1,6 @@
 "use client";
 
+import { RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { withBasePath } from "@/lib/base-path";
 import type { EngineStatus } from "@/lib/tax-engine/types";
@@ -37,84 +38,85 @@ export function EngineStatusPanel() {
   }, []);
 
   return (
-    <section
-      aria-labelledby="engine-status-title"
-      aria-live="polite"
-      className="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800"
-    >
-      <div className="flex items-center justify-between gap-4">
-        <h2 id="engine-status-title" className="text-lg font-semibold">
-          Motor oficial — regime regular
-        </h2>
+    <div aria-labelledby="engine-status-title" aria-live="polite" className="card overflow-hidden">
+      <div className="flex h-10 items-center justify-between gap-3 border-b border-line-subtle bg-[rgba(17,18,21,0.72)] px-4 font-mono text-[11px] text-fg-3">
+        <span id="engine-status-title">motor oficial · regime regular</span>
         <button
           type="button"
           onClick={() => void load()}
-          className="rounded-md border border-zinc-300 px-3 py-1 text-sm hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-2 dark:border-zinc-700 dark:hover:bg-zinc-900"
+          className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-fg-2 hover:bg-[var(--surface-hover)] hover:text-fg-1"
         >
+          <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
           Verificar novamente
         </button>
       </div>
-      <div className="mt-3 text-sm">
+      <div className="p-5 text-sm">
         <StatusBody state={state} />
       </div>
-    </section>
+    </div>
   );
 }
 
 function StatusBody({ state }: { state: PanelState }) {
   if (state.kind === "carregando") {
-    return <p className="text-zinc-500">Verificando…</p>;
+    return <p className="text-fg-3">Consultando o motor…</p>;
   }
   if (state.kind === "erro") {
-    return <Badge tone="red" label="Erro">Não foi possível consultar o estado do motor ({state.motivo}).</Badge>;
+    return (
+      <Linha classe="badge bad" rotulo="Erro">
+        Não foi possível consultar o estado do motor ({state.motivo}).
+      </Linha>
+    );
   }
 
   const { status } = state;
   switch (status.state) {
     case "nao-configurado":
       return (
-        <Badge tone="zinc" label="Não configurado">
-          {status.motivo} Enquanto isso, nenhuma simulação é feita e nenhum valor é exibido.
-        </Badge>
+        <Linha classe="badge" rotulo="Não configurado">
+          {status.motivo} Sem motor, nenhuma simulação roda e nenhum valor aparece.
+        </Linha>
       );
     case "indisponivel":
       return (
-        <Badge tone="red" label="Indisponível">
-          {status.motivo} Nenhum cálculo alternativo é usado no lugar do motor.
-        </Badge>
+        <Linha classe="badge bad" rotulo="Indisponível">
+          {status.motivo} Não existe cálculo alternativo no lugar do motor.
+        </Linha>
       );
     case "disponivel":
       return (
-        <div className="space-y-2">
-          <Badge tone="green" label="Disponível">
-            Respondendo em <code className="font-mono">{status.baseUrl}</code>.
-          </Badge>
-          <dl className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-zinc-700 dark:text-zinc-300">
-            <dt>Versão do app</dt>
-            <dd className="font-mono">{status.versao.versaoApp ?? "—"}</dd>
-            <dt>Versão da base</dt>
-            <dd className="font-mono">{status.versao.versaoDb ?? "—"}</dd>
-            <dt>Data da base</dt>
-            <dd className="font-mono">{status.versao.dataVersaoDb ?? "—"}</dd>
-            <dt>Ambiente</dt>
-            <dd className="font-mono">{status.versao.ambiente ?? "—"}</dd>
+        <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-4">
+          <Linha classe="badge ok" rotulo="Disponível">
+            Respondendo agora. Os números abaixo são os que o próprio motor informa.
+          </Linha>
+          <dl className="grid grid-cols-4 gap-x-8 gap-y-1 max-sm:grid-cols-2">
+            <Dado rotulo="versão do app" valor={status.versao.versaoApp} />
+            <Dado rotulo="versão da base" valor={status.versao.versaoDb} />
+            <Dado rotulo="data da base" valor={status.versao.dataVersaoDb} />
+            <Dado rotulo="ambiente" valor={status.versao.ambiente} />
           </dl>
         </div>
       );
   }
 }
 
-const TONES = {
-  zinc: "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100",
-  red: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200",
-  green: "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200",
-} as const;
-
-function Badge({ tone, label, children }: { tone: keyof typeof TONES; label: string; children: React.ReactNode }) {
+function Linha({ classe, rotulo, children }: { classe: string; rotulo: string; children: React.ReactNode }) {
   return (
-    <p>
-      <span className={`mr-2 inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${TONES[tone]}`}>{label}</span>
-      {children}
+    <p className="flex flex-wrap items-center gap-x-3 gap-y-2 text-fg-2">
+      <span className={classe}>
+        {classe.includes("ok") && <span className="dot" aria-hidden="true" style={{ boxShadow: "none" }} />}
+        {rotulo}
+      </span>
+      <span>{children}</span>
     </p>
+  );
+}
+
+function Dado({ rotulo, valor }: { rotulo: string; valor?: string }) {
+  return (
+    <div>
+      <dt className="font-mono text-[10px] leading-3 tracking-[0.04em] text-fg-3 uppercase">{rotulo}</dt>
+      <dd className="font-mono text-base font-medium tabular-nums">{valor ?? "n/d"}</dd>
+    </div>
   );
 }
