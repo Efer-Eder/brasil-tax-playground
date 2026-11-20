@@ -9,6 +9,12 @@ updates:
       # Os tipos acompanham a versão do Node usada no projeto (24).
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
+      # Majors que dependem do ecossistema acompanhar (eslint-config-next,
+      # typescript-eslint e Next.js). Atualizar à mão quando forem suportadas.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
