@@ -52,7 +52,7 @@ REGIME_REGULAR_ENGINE_URL=http://localhost:8080/api
 ## Limitations
 
 - No simulation yet; the regular-regime form is the next step.
-- The official engine has not been run on the development machine yet; the integration is tested with a mocked `fetch`.
+- The connection was verified against the official engine 1.7.2 running locally (status and contract tests); CI uses a mocked `fetch`.
 - No Docker Compose: the regular-regime upstream ships no Dockerfile (see [ADR 0003](docs/adr/0003-sem-docker-compose-por-enquanto.md)).
 
 ## License

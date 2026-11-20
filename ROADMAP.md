@@ -11,7 +11,7 @@ Nada aqui está pronto, a não ser o que estiver marcado. Ordem sujeita a mudan�
 
 ## v0.1.0 — regime regular de ponta a ponta
 
-- [ ] Subir o motor oficial (tag 1.7.2) localmente no Windows seguindo o README e registrar a versão retornada.
+- [x] Subir o motor oficial (tag 1.7.2) localmente no Windows seguindo o README e registrar a versão retornada.
 - [ ] Rota `POST /api/simular/regime-regular` usando `calcularComObservabilidade`.
 - [ ] Formulário de operação com os campos suportados pelo upstream (incluindo alíquotas nominais informadas pelo usuário a partir de 2027).
 - [ ] Tela de resultado: valores por item, `estadoItem`, erros, `memoriaCalculo`, avisos (`x-warning-dados-simulados`), versão do motor e data.

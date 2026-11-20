@@ -1,5 +1,22 @@
 # Progresso
 
+## 2026-11-20 — Motor oficial rodando localmente
+
+**Status:** integração de status verificada contra o motor real; simulação na UI ainda não existe.
+
+### Feito
+
+- Motor `calculadora-rtc-regime-regular` 1.7.2 (`32df719`) clonado **fora** do repositório, banco gerado com Flyway (73 migrações, `V0073`) e subido com o perfil `offline` usando Java 25 (Temurin 25.0.3) — sem Docker.
+- Painel do app mostrou **Disponível** com `versaoApp 1.7.2` / `versaoDb V0073`.
+- Exemplo oficial de observabilidade reproduziu os totais documentados no upstream.
+- Novo `npm run test:contract` (opt-in via `CONTRACT_ENGINE_URL`): 2/2 passando contra o motor; pulado na CI.
+- Adapter: `x-warning-dados-simulados` agora é exposto como código cru (`warningDadosSimulados`), porque o upstream envia um número de enum, não texto.
+- Pegadinhas do Windows documentadas em `docs/upstream-integration.md` (`core.longpaths`, `JAVA_HOME`).
+
+### Próximo passo objetivo
+
+Criar `POST /api/simular/regime-regular` (BFF chamando `calcularComObservabilidade`) e uma primeira tela que envie uma operação de 2026 sem alíquotas e mostre a resposta crua no inspetor JSON, com a versão do motor.
+
 ## 2026-11-20 — Fundação e pesquisa do upstream
 
 **Status:** fundação pronta; MVP de simulação ainda não iniciado.

@@ -53,7 +53,8 @@ REGIME_REGULAR_ENGINE_URL=http://localhost:8080/api
 | `npm run build` / `npm start` | Build e execução de produção |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | Tipos de rotas do Next + `tsc --noEmit` |
-| `npm test` | Testes Vitest |
+| `npm test` | Testes unitários (Vitest) |
+| `npm run test:contract` | Testes de contrato contra um motor real (`CONTRACT_ENGINE_URL`) |
 
 ## Documentação
 
@@ -65,7 +66,7 @@ REGIME_REGULAR_ENGINE_URL=http://localhost:8080/api
 ## Limitações
 
 - Ainda não há simulação: o formulário do regime regular é o próximo passo.
-- O motor oficial ainda não foi executado nesta máquina; a integração foi testada com `fetch` simulado.
+- A conexão foi verificada contra o motor oficial 1.7.2 rodando localmente (status e contrato); a CI usa `fetch` simulado.
 - Sem Docker Compose: o upstream do regime regular não publica Dockerfile (ver [ADR 0003](docs/adr/0003-sem-docker-compose-por-enquanto.md)).
 
 ## Contribuir
