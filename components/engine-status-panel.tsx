@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { withBasePath } from "@/lib/base-path";
 import type { EngineStatus } from "@/lib/tax-engine/types";
 
 type PanelState = { kind: "carregando" } | { kind: "erro"; motivo: string } | { kind: "ok"; status: EngineStatus };
@@ -16,7 +17,7 @@ export function EngineStatusPanel() {
   async function load(signal?: AbortSignal) {
     setState({ kind: "carregando" });
     try {
-      const res = await fetch("/api/engine/status", { cache: "no-store", signal });
+      const res = await fetch(withBasePath("/api/engine/status"), { cache: "no-store", signal });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setState({ kind: "ok", status: (await res.json()) as EngineStatus });
     } catch (error) {

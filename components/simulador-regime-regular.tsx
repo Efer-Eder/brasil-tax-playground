@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { withBasePath } from "@/lib/base-path";
 import { EXEMPLOS } from "@/lib/simulation/exemplos";
 import type { SimulacaoResultado } from "@/lib/simulation/regime-regular";
 import { Alerta, ErroSimulacao, ResultadoSucesso } from "./resultado-simulacao";
@@ -30,7 +31,7 @@ export function SimuladorRegimeRegular() {
     event.preventDefault();
     setEstado({ kind: "enviando" });
     try {
-      const res = await fetch("/api/simular/regime-regular", {
+      const res = await fetch(withBasePath("/api/simular/regime-regular"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: texto,
