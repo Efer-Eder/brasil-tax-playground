@@ -138,6 +138,8 @@ export function ErroSimulacao({
   const titulos: Record<typeof erro.tipo, string> = {
     "json-invalido": "JSON inválido",
     validacao: "Operação inválida",
+    "limite-itens": "Operação grande demais para esta instância",
+    ocupado: "Instância ocupada",
     "nao-configurado": "Motor não configurado",
     indisponivel: "Motor indisponível",
     "erro-do-motor": "O motor recusou a operação",

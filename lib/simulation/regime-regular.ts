@@ -14,6 +14,7 @@ import {
   type OperacaoInput,
 } from "@/lib/tax-engine/schemas/regime-regular";
 import type { EngineVersion } from "@/lib/tax-engine/types";
+import { FilaCheiaError, type LimitadorConcorrencia } from "./limites";
 
 /**
  * Resultado de uma simulação, no formato que o BFF devolve ao navegador.
@@ -40,6 +41,8 @@ export type SimulacaoResultado =
 export type SimulacaoErro =
   | { tipo: "json-invalido"; mensagem: string }
   | { tipo: "validacao"; mensagem: string; problemas: { caminho: string; mensagem: string }[] }
+  | { tipo: "limite-itens"; mensagem: string; maxItens: number }
+  | { tipo: "ocupado"; mensagem: string }
   | { tipo: "nao-configurado"; mensagem: string }
   | { tipo: "indisponivel"; mensagem: string }
   | { tipo: "erro-do-motor"; mensagem: string; statusMotor: number; corpo: unknown }
@@ -50,6 +53,10 @@ export interface SimularDeps {
   env?: Record<string, string | undefined>;
   createClient?: (config: { baseUrl: string; timeoutMs: number }) => RegimeRegularAdapter;
   now?: () => Date;
+  /** Teto de itens por operação (instância pública). */
+  maxItens?: number | null;
+  /** Limita chamadas simultâneas ao motor (instância pública). */
+  limitador?: LimitadorConcorrencia;
 }
 
 /** Recebe o corpo cru da requisição (texto) e executa a simulação. */
@@ -73,6 +80,14 @@ export async function simularRegimeRegular(rawBody: string, deps: SimularDeps = 
     });
   }
 
+  if (deps.maxItens && parsed.data.itens.length > deps.maxItens) {
+    return falha(413, {
+      tipo: "limite-itens",
+      mensagem: `Esta instância aceita até ${deps.maxItens} itens por operação (recebidos ${parsed.data.itens.length}). Divida a operação ou rode o motor localmente.`,
+      maxItens: deps.maxItens,
+    });
+  }
+
   const config = readRegimeRegularConfig(deps.env ?? process.env);
   if (!config.ok) {
     return falha(503, { tipo: "nao-configurado", mensagem: config.motivo });
@@ -81,9 +96,12 @@ export async function simularRegimeRegular(rawBody: string, deps: SimularDeps = 
   const client = (deps.createClient ?? createRegimeRegularHttpClient)(config.config);
 
   try {
-    const resultado = await client.calcularComObservabilidade(parsed.data);
-    // A versão é informativa: se falhar, o cálculo continua válido.
-    const versao = await client.getVersao().catch(() => null);
+    const executar = <T>(tarefa: () => Promise<T>) => (deps.limitador ? deps.limitador.executar(tarefa) : tarefa());
+    const { resultado, versao } = await executar(async () => ({
+      resultado: await client.calcularComObservabilidade(parsed.data),
+      // A versão é informativa: se falhar, o cálculo continua válido.
+      versao: await client.getVersao().catch(() => null),
+    }));
     return {
       ok: true,
       httpStatus: 200,
@@ -94,6 +112,12 @@ export async function simularRegimeRegular(rawBody: string, deps: SimularDeps = 
       executadoEm: (deps.now?.() ?? new Date()).toISOString(),
     };
   } catch (error) {
+    if (error instanceof FilaCheiaError) {
+      return falha(503, {
+        tipo: "ocupado",
+        mensagem: "A instância está no limite de simulações simultâneas. Tente de novo em alguns segundos.",
+      });
+    }
     if (error instanceof EngineUnavailableError) {
       return falha(error.causa === "timeout" ? 504 : 503, { tipo: "indisponivel", mensagem: error.message });
     }
