@@ -6,6 +6,9 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); 
 
 ### Adicionado
 
+- Página do projeto no visual do efer.online (Studio Graphite), escrita para devs, e card ao vivo do GitHub (estrelas, commits, issues, PRs, contribuidores e último CI) via `GET /api/github` com cache de 15 min.
+- Card do projeto no hub de efer.online.
+
 - Instância pública em https://efer.online/projeto/brasil-tax-playground/ com API em `/api/brasil-tax-playground/`: Docker Compose (motor oficial + app), Nginx com rate limit, fila com limite de concorrência, teto de 50 itens, timeouts em camadas e CORS aberto. Medições e contas em `docs/deploy-efer-online.md`.
 - Build standalone com `NEXT_BASE_PATH` e script `deploy/deploy.ps1`.
 

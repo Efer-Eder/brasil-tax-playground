@@ -6,7 +6,7 @@
 
 > Independent, unofficial tool. It does not replace accounting or tax advice and has no affiliation with Brazil's Federal Revenue Service (Receita Federal).
 
-**Try it online:** <https://efer.online/projeto/brasil-tax-playground/>. Public API at `https://efer.online/api/brasil-tax-playground/` (`GET engine/status`, `POST simular/regime-regular`): no sign-up, open CORS, 2 req/s per client (burst 20), up to 50 items per operation. Details in [docs/deploy-efer-online.md](docs/deploy-efer-online.md) (Portuguese).
+**Project page and public instance:** <https://efer.online/projeto/brasil-tax-playground> (includes a live GitHub card with commits, issues, PRs and the latest CI run). Public API at `https://efer.online/api/brasil-tax-playground/` (`GET engine/status`, `POST simular/regime-regular`): no sign-up, open CORS, 2 req/s per client (burst 20), up to 50 items per operation. Details in [docs/deploy-efer-online.md](docs/deploy-efer-online.md) (Portuguese).
 
 An educational web interface for exploring the **open-source engines of Brazil's consumption tax reform** (CBS, IBS and the Selective Tax, IS) that Receita Federal published on GitHub. The goal: fill in a transaction, send it to an engine **you** run locally, and inspect the result, the calculation trail and the raw JSON.
 

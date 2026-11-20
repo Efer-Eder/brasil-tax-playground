@@ -119,6 +119,18 @@ Excedeu → **429** em JSON com `Retry-After: 2`. Conferido pelo caminho públic
 
 A ordem garante que o app sempre responde (8 s + 3 s < 15 s) antes de o Nginx desistir.
 
+## Card do GitHub (dados ao vivo)
+
+A página do projeto mostra um resumo do repositório vindo da API REST pública do GitHub, buscado pelo servidor do app (`GET /api/github`, também em `https://efer.online/api/brasil-tax-playground/github`).
+
+- 6 chamadas por atualização: repositório, 5 commits recentes, total de commits (cabeçalho `Link`), issues e PRs abertos, contribuidores e runs de Actions em `push`.
+- Cache em memória de **15 min**: ~24 req/h, abaixo do limite de 60 req/h sem token. Requisições simultâneas compartilham uma busca só.
+- Se o GitHub falhar, o card mostra o último dado bom (marcado como desatualizado) ou diz que está indisponível. Nunca inventa número.
+- `GITHUB_TOKEN` (opcional) aumenta o limite; `GITHUB_API_BASE` troca a base da API (usado no E2E, que não chama o GitHub de verdade).
+- O container do app precisa de saída para a internet só para isso (rede `publica` do Compose). O motor continua sem saída.
+
+Commits, estrelas, issues, PRs e CI aparecem sozinhos em até 15 min. Deploy só é necessário quando o código da página muda.
+
 ## Como publicar uma nova versão
 
 Pré-requisitos locais: Node 24, Java 25 com `JAVA_HOME`, acesso SSH à VPS e um clone do motor na tag desejada, com `flyway:migrate` e `clean package` já executados (ver [upstream-integration.md](upstream-integration.md)).

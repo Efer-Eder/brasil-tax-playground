@@ -1,5 +1,21 @@
 # Progresso
 
+## 2026-11-20 — Página do projeto e card do GitHub
+
+**Status:** página do projeto no ar em https://efer.online/projeto/brasil-tax-playground, com card no hub de efer.online.
+
+### Feito
+
+- Visual do app trocado pelos tokens do efer.online (tema grafite, acento índigo, Geist, bordas de 1px), com cabeçalho e rodapé do site e o aviso legal fixo.
+- Página inicial reescrita como página do projeto para devs: como funciona (navegador → BFF → motor), regras, API com exemplos de `curl`, limites, códigos de resposta, como rodar local e motores oficiais.
+- Card ao vivo do repositório (`GET /api/github`): estrelas, forks, commits, issues e PRs abertos, contribuidores e último CI, com cache de 15 min e fallback para o último dado bom. 8 testes novos; E2E não chama o GitHub real.
+- Card no hub (`/var/www/hub/index.html`) com prévia de requisição e resposta usando os valores da fixture real, entrada 03 no índice, rota no tile de infra e linha no changelog. Troca feita só depois de conferir que o hub não tinha mudado (sha256), com backup.
+- Homepage do repositório no GitHub aponta para a página do projeto.
+
+### Próximo passo objetivo
+
+Acompanhar uso e latência reais por uma semana e revisar os limites; depois, formulário guiado para a operação.
+
 ## 2026-11-20 — Instância pública em efer.online
 
 **Status:** no ar em https://efer.online/projeto/brasil-tax-playground/, com API em https://efer.online/api/brasil-tax-playground/.

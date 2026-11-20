@@ -6,7 +6,7 @@
 
 > Ferramenta independente, não oficial e não substitui orientação contábil ou tributária. Sem vínculo com a Receita Federal.
 
-**Experimente online:** <https://efer.online/projeto/brasil-tax-playground/> (instância pública com o motor oficial 1.7.2; detalhes e limites em [docs/deploy-efer-online.md](docs/deploy-efer-online.md)).
+**Página do projeto e instância pública:** <https://efer.online/projeto/brasil-tax-playground> (motor oficial 1.7.2, simulador, documentação da API e um card ao vivo do repositório com commits, issues, PRs e o último CI). Detalhes e limites em [docs/deploy-efer-online.md](docs/deploy-efer-online.md).
 
 Interface web educacional para estudar os **motores de código aberto da Reforma Tributária do Consumo** (CBS, IBS e Imposto Seletivo) publicados pela Receita Federal no GitHub. A ideia é preencher uma operação, enviar ao motor que **você** roda localmente e ver o resultado, a memória de cálculo e o JSON técnico.
 
@@ -16,6 +16,8 @@ Princípio central: **nenhuma alíquota, regra ou cálculo fiscal é inventado a
 
 - Página inicial com o escopo (CBS, IBS, IS) e o aviso legal fixo em todas as páginas.
 - Página `/simular`: editor JSON com três exemplos fictícios, envio ao motor pelo BFF (`POST /api/simular/regime-regular`), estado de cada item, erros, memória de cálculo (texto do próprio motor), versão do motor, inspetor de requisição/resposta e exportação em JSON.
+- Página do projeto no visual do efer.online, escrita para devs: como funciona, API, como rodar local e motores oficiais.
+- Card do repositório com dados ao vivo da API do GitHub (estrelas, forks, commits, issues e PRs abertos, contribuidores e último run de CI), com cache de 15 minutos no servidor. Atualiza sozinho; não precisa de deploy.
 - Painel de status do motor de regime regular: *não configurado*, *indisponível* ou *disponível* (com a versão informada pelo motor).
 - `lib/tax-engine/`: tipos, configuração por variável de ambiente, schemas zod que espelham a entrada do upstream e cliente HTTP do regime regular com timeout e erros tipados.
 - Testes Vitest da configuração, dos schemas e do tratamento de indisponibilidade.
