@@ -26,9 +26,11 @@ export default defineConfig({
       reuseExistingServer: false,
     },
     {
-      command: `npx next start -p ${APP_PORT} -H 127.0.0.1`,
+      command: "node scripts/preparar-standalone.mjs && node .next/standalone/server.js",
       url: `http://127.0.0.1:${APP_PORT}`,
       env: {
+        PORT: String(APP_PORT),
+        HOSTNAME: "127.0.0.1",
         REGIME_REGULAR_ENGINE_URL: `http://127.0.0.1:${ENGINE_PORT}/api`,
         NEXT_TELEMETRY_DISABLED: "1",
       },
