@@ -53,7 +53,25 @@ Depois, neste projeto, configure `.env.local`:
 REGIME_REGULAR_ENGINE_URL=http://localhost:8080/api
 ```
 
-Status deste passo: **ainda não executado nesta máquina**. Os comandos acima foram transcritos do README; a primeira subida real e o registro da versão retornada são a próxima tarefa (ver `PROGRESS.md`).
+### Verificado nesta máquina (20/11/2026, Windows 11, Temurin JDK 25.0.3)
+
+Os passos acima funcionaram, com três ajustes práticos no Windows:
+
+1. **Caminhos longos**: o checkout falha com `Filename too long` em arquivos de teste. Clone com `git -c core.longpaths=true clone ...` (ou rode `git config --global core.longpaths true` uma vez).
+2. **`JAVA_HOME`** precisa estar definido; o `mvnw.cmd` não usa só o `java` do PATH. Exemplo em PowerShell: `$env:JAVA_HOME = 'C:\Program Files\Eclipse Adoptium\jdk-25.0.3.9-hotspot'`.
+3. No PowerShell, chame `.\mvnw.cmd ...` e coloque entre aspas os argumentos `-D...`.
+
+Resultado:
+
+- A tag `1.7.2` aponta para o commit `32df719`; o `f1eebd7` da `main` é o merge do release, com árvore idêntica (comparação no GitHub: 0 arquivos diferentes).
+- `flyway:migrate`: 73 migrações aplicadas (versão `v0073`), `calculadora-pro.db` com ~5,6 MB, em ~24 s.
+- `spring-boot:run` com perfil `offline`: subiu em ~9 s.
+- `GET /api/calculadora/dados-abertos/versao` → `versaoApp: "1.7.2"`, `versaoDb: "V0073"`, `dataVersaoDb: "2026-11-09"`, `ambiente: "offline"`.
+- `GET http://localhost:9101/health` → `{"status":"UP"}`.
+- O exemplo de observabilidade de `docs/exemplos.md` do upstream, enviado sem alterações, devolveu os mesmos estados e totais documentados (itens 1–3 `CALCULO_SIMULADO`, item 4 `INCONSISTENCIA_ENTRADA`/`REG-011`), com o header `x-warning-dados-simulados: 6`.
+- O painel deste app mostrou **Disponível** com essa versão, e `npm run test:contract` passou contra o motor (ver `tests/contract/`).
+
+Sobre o header `x-warning-dados-simulados`: o valor é um **código numérico** do enum `TipoWarningDadosSimulados` (1 `CASO_GERAL`, 2 `CASO_COMPRAS_GOVERNAMENTAIS`, 3 `CASO_IMPOSTO_SELETIVO`, 4 `CASO_COMPRAS_GOVERNAMENTAIS_IS`, 5 `CASO_ALIQUOTAS_FICTICIAS`, 6 `CASO_CALCULOS_SIMULADOS`), não uma mensagem. O adapter repassa o valor cru.
 
 ### Portas e caminhos (de `src/main/resources/application-offline.yml`)
 
