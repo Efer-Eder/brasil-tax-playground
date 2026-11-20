@@ -17,9 +17,9 @@ Nada aqui está pronto, a não ser o que estiver marcado. Ordem sujeita a mudan�
 - [ ] Formulário guiado de operação com os campos suportados pelo upstream (incluindo alíquotas nominais informadas pelo usuário a partir de 2027).
 - [ ] Tela de resultado (parcial: estado, erros, memória de cálculo, aviso e versão já aparecem; valores ficam no JSON do item): valores por item, `estadoItem`, erros, `memoriaCalculo`, avisos (`x-warning-dados-simulados`), versão do motor e data.
 - [x] Inspetor de JSON (request/response) e exportação da simulação em JSON.
-- [ ] Três cenários com fixtures geradas pelo motor real e teste de paridade resposta × tela.
+- [x] Três cenários com fixtures geradas pelo motor real e teste de paridade resposta × tela.
 - [x] Erro de validação (ex.: HTTP 422/`INCONSISTENCIA_ENTRADA`) explicado ao usuário.
-- [ ] Testes ponta a ponta com Playwright.
+- [x] Testes ponta a ponta com Playwright (replay das fixtures na CI).
 
 ## Depois
 

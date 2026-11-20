@@ -1,5 +1,20 @@
 # Progresso
 
+## 2026-11-20 — Fixtures reais, paridade e E2E
+
+**Status:** critérios de teste da v0.1.0 cobertos para o regime regular via editor JSON.
+
+### Feito
+
+- 3 fixtures gravadas do motor real 1.7.2/V0073 (`tests/fixtures/regime-regular/`) por `npm run fixtures:gravar` — nunca escritas à mão.
+- Regressão (`test:contract`): reenvia cada requisição ao motor real e exige resposta idêntica → detecta mudança do upstream. 5/5 contra o motor local.
+- Paridade (`tests/unit/paridade-fixtures.test.ts`): renderiza a tela a partir de cada fixture e confere versão, estados, erros e memória literais, e que nenhum número decimal exibido fora do JSON deixa de vir do motor. 71 testes unitários.
+- E2E Playwright (6/6) com `tests/e2e/fixture-engine.mjs`, servidor de **replay** que só devolve respostas gravadas (422 para requisição sem gravação). Job novo na CI.
+
+### Próximo passo objetivo
+
+Formulário guiado para a operação (gerando o mesmo JSON do editor), mantendo o editor como modo avançado.
+
 ## 2026-11-20 — Primeira simulação de ponta a ponta
 
 **Status:** regime regular simulável pelo editor JSON, verificado contra o motor oficial 1.7.2 local.

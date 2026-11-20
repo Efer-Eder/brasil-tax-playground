@@ -55,6 +55,8 @@ REGIME_REGULAR_ENGINE_URL=http://localhost:8080/api
 | `npm run lint` | ESLint |
 | `npm run typecheck` | Tipos de rotas do Next + `tsc --noEmit` |
 | `npm test` | Testes unitários (Vitest) |
+| `npm run test:e2e` | Playwright (rode `npm run build` antes); usa um servidor de replay das respostas gravadas do motor |
+| `npm run fixtures:gravar` | Regrava as fixtures a partir de um motor real (`CONTRACT_ENGINE_URL` + `RECORD_FIXTURES=1`) |
 | `npm run test:contract` | Testes de contrato contra um motor real (`CONTRACT_ENGINE_URL`) |
 
 ## Documentação
@@ -66,7 +68,7 @@ REGIME_REGULAR_ENGINE_URL=http://localhost:8080/api
 
 ## Limitações
 
-- A entrada é um editor JSON; o formulário guiado e os testes ponta a ponta ainda não existem.
+- A entrada é um editor JSON; o formulário guiado ainda não existe.
 - A conexão foi verificada contra o motor oficial 1.7.2 rodando localmente (status e contrato); a CI usa `fetch` simulado.
 - Sem Docker Compose: o upstream do regime regular não publica Dockerfile (ver [ADR 0003](docs/adr/0003-sem-docker-compose-por-enquanto.md)).
 

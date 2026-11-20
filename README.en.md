@@ -48,11 +48,11 @@ REGIME_REGULAR_ENGINE_URL=http://localhost:8080/api
 
 ## Scripts
 
-`npm run dev`, `npm run build`, `npm start`, `npm run lint`, `npm run typecheck`, `npm test`.
+`npm run dev`, `npm run build`, `npm start`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:e2e` (after a build; replays recorded engine responses), `npm run test:contract`, `npm run fixtures:gravar`.
 
 ## Limitations
 
-- Input is a JSON editor; the guided form and end-to-end tests do not exist yet.
+- Input is a JSON editor; the guided form does not exist yet.
 - The connection was verified against the official engine 1.7.2 running locally (status and contract tests); CI uses a mocked `fetch`.
 - No Docker Compose: the regular-regime upstream ships no Dockerfile (see [ADR 0003](docs/adr/0003-sem-docker-compose-por-enquanto.md)).
 

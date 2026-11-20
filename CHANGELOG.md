@@ -6,6 +6,8 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); 
 
 ### Adicionado
 
+- Fixtures gravadas do motor oficial 1.7.2 (3 cenários), teste de paridade resposta × tela, regressão contra o motor real e E2E com Playwright usando replay das fixtures.
+
 - Página `/simular` com editor JSON, exemplos fictícios, resultado por item, memória de cálculo do motor, inspetor e exportação JSON.
 - Rota `POST /api/simular/regime-regular` com validação estrutural e mapeamento explícito de erros (400/422/503/504/502).
 
