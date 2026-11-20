@@ -1,63 +1,203 @@
-# Brasil Tax Playground
+<div align="center">
 
-[Português](README.md)
+<a href="https://efer.online/projeto/brasil-tax-playground"><img src="docs/assets/banner-en.gif" alt="Brasil Tax Playground: a playground for Brazil's open source tax reform engines" width="100%"></a>
 
-> **Work in progress.** You can already send a regular-regime transaction to the official engine through a JSON editor and inspect the response. The guided form does not exist yet.
+<p>
+<a href="https://github.com/Efer-Eder/brasil-tax-playground/actions/workflows/ci.yml"><img src="https://github.com/Efer-Eder/brasil-tax-playground/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
+<a href="https://efer.online/projeto/brasil-tax-playground"><img src="https://img.shields.io/website?url=https%3A%2F%2Fefer.online%2Fapi%2Fbrasil-tax-playground%2Fengine%2Fstatus&label=instance&up_message=online&down_message=offline&style=flat-square&up_color=4CB782" alt="Public instance"></a>
+<a href="https://github.com/ReceitaFederal/calculadora-rtc-regime-regular"><img src="https://img.shields.io/badge/official%20engine-1.7.2-7377F0?style=flat-square" alt="Official engine 1.7.2"></a>
+<a href="LICENSE"><img src="https://img.shields.io/github/license/Efer-Eder/brasil-tax-playground?style=flat-square&color=6C707A" alt="MIT license"></a>
+<a href="https://github.com/Efer-Eder/brasil-tax-playground/commits/main"><img src="https://img.shields.io/github/last-commit/Efer-Eder/brasil-tax-playground?style=flat-square&color=6C707A" alt="Last commit"></a>
+</p>
 
-> Independent, unofficial tool. It does not replace accounting or tax advice and has no affiliation with Brazil's Federal Revenue Service (Receita Federal).
+<p>
+<a href="https://efer.online/projeto/brasil-tax-playground"><b>Project page</b></a>
+&nbsp;·&nbsp;
+<a href="https://efer.online/projeto/brasil-tax-playground/simular"><b>Simulator</b></a>
+&nbsp;·&nbsp;
+<a href="#public-api"><b>API</b></a>
+&nbsp;·&nbsp;
+<a href="README.md"><b>Português</b></a>
+</p>
 
-**Project page and public instance:** <https://efer.online/projeto/brasil-tax-playground> (includes a live GitHub card with commits, issues, PRs and the latest CI run). Public API at `https://efer.online/api/brasil-tax-playground/` (`GET engine/status`, `POST simular/regime-regular`): no sign-up, open CORS, 2 req/s per client (burst 20), up to 50 items per operation. Details in [docs/deploy-efer-online.md](docs/deploy-efer-online.md) (Portuguese).
+</div>
 
-An educational web interface for exploring the **open-source engines of Brazil's consumption tax reform** (CBS, IBS and the Selective Tax, IS) that Receita Federal published on GitHub. The goal: fill in a transaction, send it to an engine **you** run locally, and inspect the result, the calculation trail and the raw JSON.
+> [!IMPORTANT]
+> Independent, unofficial tool. It does not replace accounting or tax advice and has no affiliation with Brazil's Federal Revenue Service (Receita Federal). **Work in progress**: input is a JSON editor for now; a guided form comes later. The UI is in Brazilian Portuguese.
 
-Core rule: **no tax rate, rule or calculation is invented here**. Every number shown will come from the official engine's response, together with its version. If the engine is unavailable, the app says so and shows no values.
+## Why this exists
 
-## What exists today
+In 2026 Receita Federal published the calculation engines of Brazil's consumption tax reform on GitHub (CBS, IBS and the Selective Tax, IS). They are Java APIs meant to run on your own machine, with no UI. This project puts an interface and a public API in front of the official engine, so you can **study and test how it behaves** without setting everything up from scratch.
 
-- Home page describing the scope (CBS, IBS, IS) and a persistent legal notice on every page.
-- `/simular` page: JSON editor with three fictitious examples, sent to the engine through the BFF (`POST /api/simular/regime-regular`), per-item state, errors, calculation trail (text produced by the engine), engine version, request/response inspector and JSON export.
-- Status panel for the regular-regime engine: *not configured*, *unavailable* or *available* (with the version reported by the engine).
-- `lib/tax-engine/`: types, env-based configuration, zod schemas mirroring the upstream input, and an HTTP client for the regular regime with timeout and typed errors.
-- Vitest tests for configuration, schemas and unavailability handling.
+The one rule behind everything: **no tax rate, rule or calculation is written here**. The app validates the shape, calls the engine and shows the raw response, with the calculation trail and the engine version that produced each number. If the engine is down, the UI says so; there is no fallback simulator.
 
-| Integration | Status in this project |
+<div align="center">
+<img src="docs/assets/tour-en.gif" alt="Project page tour: GitHub card, how it works and API" width="100%">
+</div>
+
+## What you can do
+
+| | |
 |---|---|
-| [Regular regime](https://github.com/ReceitaFederal/calculadora-rtc-regime-regular) | In progress (simulation via JSON editor; guided form pending) |
-| [Simples Nacional](https://github.com/ReceitaFederal/calculadora-rtc-simples-nacional) | Planned |
-| [DANFSe generator](https://github.com/ReceitaFederal/calculadora-rtc-gerador-danfse) | Planned (renders a PDF from XML; does not calculate taxes) |
+| **Simulate a transaction** | JSON editor in the engine's `OperacaoInput` shape, with ready-made fictitious examples. |
+| **See the engine's answer** | Per-item state, errors with the field path, the calculation trail as text and the item values. |
+| **Inspect and export** | Raw request and response side by side, and a JSON download of the simulation. |
+| **Use the public API** | No sign-up, no key, open CORS, measured limits. |
+| **Follow the project** | Live GitHub card on the page: commits, issues, PRs, contributors and the latest CI run. |
 
-## Run locally (Windows)
+<div align="center">
+<img src="docs/assets/simulador-en.gif" alt="Simulator: picking an example, the official engine's answer, a per-item error and invalid input" width="100%">
+</div>
 
-Requirements: Node.js 20.9+ (tested with Node 24) and npm.
+## Public API
 
-```powershell
+Base URL: `https://efer.online/api/brasil-tax-playground`
+
+<div align="center">
+<img src="docs/assets/api-en.gif" alt="Public API calls in a terminal" width="100%">
+</div>
+
+```bash
+# Engine status and version
+curl https://efer.online/api/brasil-tax-playground/engine/status
+
+# A fictitious 2026 operation (before 2027 the engine rejects aliquotasNominais)
+curl -X POST https://efer.online/api/brasil-tax-playground/simular/regime-regular \
+  -H 'Content-Type: application/json' \
+  -d '{"id":"test","versao":"1.0.0","dhFatoGerador":"2026-06-01T10:00:00-03:00",
+       "municipio":4314902,"uf":"RS",
+       "itens":[{"numero":1,"ncm":"22030000","cst":"000","cClassTrib":"000001","baseCalculo":100}]}'
+```
+
+| Method | Route | Returns |
+|---|---|---|
+| `GET` | `/engine/status` | Engine state and version (app, database and database date). |
+| `POST` | `/simular/regime-regular` | The request, the raw engine response, its version and `x-warning-dados-simulados`. |
+| `GET` | `/github` | Repository summary used by the page's GitHub card. |
+
+<details>
+<summary><b>Limits and response codes</b></summary>
+
+<br>
+
+Limits come from load tests on the server (about 30 req/s with 1 item and 6 req/s with 50 items). Full math in [docs/deploy-efer-online.md](docs/deploy-efer-online.md) (Portuguese).
+
+| Limit | Value |
+|---|---|
+| Per client | 2 req/s, burst of 20 |
+| Whole instance | 30 req/s |
+| Items per operation | 50 |
+| Body | 512 KB |
+| Concurrent engine calls | 3, queue of 32 (3 s max wait) |
+| Engine timeout | 8 s |
+
+| Code | When |
+|---|---|
+| `200` | Computed. Per-item errors come in `objetos[].estadoItem`, as in the engine. |
+| `400` | Invalid JSON. |
+| `413` | More than 50 items or a body over 512 KB. |
+| `422` | Failed structural validation; the response lists each problem's path. |
+| `429` | Rate limited. Honor `Retry-After`. |
+| `502` | The engine rejected it (ProblemDetail passed through as is) or broke the contract. |
+| `503` | Queue full or engine down. |
+| `504` | The engine did not answer within 8 s. |
+
+</details>
+
+## How it works
+
+```mermaid
+flowchart LR
+  A[Browser or API client] -->|HTTPS| B[Cloudflare + Nginx<br/>rate limits and timeouts]
+  B --> C[Next.js app<br/>BFF: zod, queue, item cap]
+  C -->|internal Docker network| D[(Official engine<br/>calculadora-rtc-regime-regular 1.7.2<br/>Java 25, no published port)]
+  C -.->|15 min cache| E[GitHub API<br/>repository card]
+```
+
+- **Numbers only from the engine.** No tax rate, reduction or rule in the code.
+- **Mirrored contract.** Schemas copy the Bean Validation of the upstream input classes, with a link to the commit. Business rules stay in the engine.
+- **Tested against the real thing.** Fixtures recorded from the real engine, a parity test between response and UI, and a regression test that fails if upstream output changes.
+
+## Run it locally
+
+Requirements: Node.js 20.9+ (tested with Node 24). For the engine: Java 25.
+
+```bash
 git clone https://github.com/Efer-Eder/brasil-tax-playground.git
 cd brasil-tax-playground
 npm ci
-copy .env.example .env.local
 npm run dev
 ```
 
-Open http://localhost:3000. Without an engine, the panel shows **Não configurado** (not configured) — that is expected.
+Open http://localhost:3000. Without an engine, the panel shows **Não configurado** (not configured) and no simulation runs. That is expected.
 
-### Connect the official engine
+<details>
+<summary><b>Run the official engine locally (Windows)</b></summary>
 
-The regular-regime engine is a Java 25 / Spring Boot API you run yourself. The steps (build the SQLite database with Flyway, start with the `offline` profile) are in [docs/upstream-integration.md](docs/upstream-integration.md) (Portuguese), with links and the commit reviewed. Once it is running, set in `.env.local`:
+<br>
+
+```powershell
+# outside the app folder
+git -c core.longpaths=true clone --branch 1.7.2 https://github.com/ReceitaFederal/calculadora-rtc-regime-regular.git
+cd calculadora-rtc-regime-regular
+$env:JAVA_HOME = "C:\path\to\jdk-25"
+mkdir calculadora\db
+.\mvnw.cmd flyway:migrate "-Dflyway.configFiles=flyway\flyway-pro.conf" --batch-mode --errors
+.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=offline"
+```
+
+In the app's `.env.local`:
 
 ```env
 REGIME_REGULAR_ENGINE_URL=http://localhost:8080/api
 ```
 
-## Scripts
+Step by step, contracts and gotchas: [docs/upstream-integration.md](docs/upstream-integration.md) (Portuguese).
 
-`npm run dev`, `npm run build`, `npm start`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:e2e` (after a build; replays recorded engine responses), `npm run test:contract`, `npm run fixtures:gravar`.
+</details>
 
-## Limitations
+<details>
+<summary><b>Scripts</b></summary>
 
-- Input is a JSON editor; the guided form does not exist yet.
-- The connection was verified against the official engine 1.7.2 running locally (status and contract tests); CI uses a mocked `fetch`.
-- The Docker Compose in `deploy/` is for the public instance ([ADR 0005](docs/adr/0005-instancia-publica-em-efer-online.md)); for local development the engine still runs directly on Java.
+<br>
+
+| Command | What it does |
+|---|---|
+| `npm run dev` | Development server |
+| `npm run build` / `npm start` | Standalone build and run |
+| `npm run lint` | ESLint |
+| `npm run typecheck` | Next route types + `tsc --noEmit` |
+| `npm test` | Unit tests (Vitest) |
+| `npm run test:e2e` | Playwright against a server that only replays recorded engine responses (run `npm run build` first) |
+| `npm run test:contract` | Contract and regression tests against a real engine (`CONTRACT_ENGINE_URL`) |
+| `npm run fixtures:gravar` | Re-record fixtures from a real engine (`CONTRACT_ENGINE_URL` + `RECORD_FIXTURES=1`) |
+
+</details>
+
+## Tests and CI
+
+- **Unit (Vitest):** validation, engine errors, queue, cache and the GitHub card.
+- **Parity:** the UI is rendered from recorded real engine responses and compared value by value.
+- **Regression:** optional, against a running engine; fails if upstream output changes.
+- **End to end (Playwright):** against a replay server, never calling GitHub or the real engine.
+- **CI:** Ubuntu and Windows, E2E and secret scanning with gitleaks.
+
+## Official engines
+
+| Repository | Status here |
+|---|---|
+| [calculadora-rtc-regime-regular](https://github.com/ReceitaFederal/calculadora-rtc-regime-regular) | Integrated (1.7.2) |
+| [calculadora-rtc-simples-nacional](https://github.com/ReceitaFederal/calculadora-rtc-simples-nacional) | Planned |
+| [calculadora-rtc-gerador-danfse](https://github.com/ReceitaFederal/calculadora-rtc-gerador-danfse) | Planned (renders a PDF from XML; does not calculate taxes) |
+
+## Contributing
+
+Issues, PRs and stars help. Read [CONTRIBUTING.md](CONTRIBUTING.md) first; the one non-negotiable rule is that **no tax number goes into the code**, it comes from the engine. Code of conduct in [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md); security issues in [SECURITY.md](SECURITY.md).
 
 ## License
 
-[MIT](LICENSE) © Efer Eder. The official engines have their own license (MIT) and copyright holder and are not redistributed here.
+[MIT](LICENSE) © Efer Eder. The official engines have their own license (MIT) and copyright holder (Receita Federal do Brasil) and are not redistributed here.
+
+<div align="center">
+<sub>The GIFs in this README are generated from real screens of the public instance by <code>scripts/readme/</code>.</sub>
+</div>

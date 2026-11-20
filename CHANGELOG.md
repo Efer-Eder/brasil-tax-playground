@@ -6,6 +6,8 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); 
 
 ### Adicionado
 
+- READMEs em pt-BR e en-US reescritos, com banner e GIFs animados gerados a partir de telas reais da instância pública (`scripts/readme/`).
+
 - Página do projeto no visual do efer.online (Studio Graphite), escrita para devs, e card ao vivo do GitHub (estrelas, commits, issues, PRs, contribuidores e último CI) via `GET /api/github` com cache de 15 min.
 - Card do projeto no hub de efer.online.
 
