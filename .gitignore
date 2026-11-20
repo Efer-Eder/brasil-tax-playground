@@ -46,3 +46,6 @@ next-env.d.ts
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# capturas temporárias dos GIFs do README
+/.readme-captura/
