@@ -1,0 +1,32 @@
+# Progresso
+
+## 2026-11-20 — Fundação e pesquisa do upstream
+
+**Status:** fundação pronta; MVP de simulação ainda não iniciado.
+
+### Feito
+
+- Pesquisa dos três repositórios oficiais (`gh repo view`/`gh api` + README, exemplos, configs e classes de entrada/saída). Registro em [docs/upstream-integration.md](docs/upstream-integration.md):
+  - regime regular: Java 25/Spring Boot 4.1.2, MIT, tag 1.7.2, commit `f1eebd7`; API em `http://localhost:8080/api`;
+  - Simples Nacional: Java 25, MIT, tag 1.0.2, commit `a926d5a`; porta 8082;
+  - DANFSe: Go, MIT, tag 1.0.0, commit `8d79e6b`; gera PDF, não calcula.
+- App Next.js 16 + TypeScript + Tailwind 4, com aviso legal persistente e página de escopo.
+- `lib/tax-engine/`: tipos, config por env, schemas zod, cliente HTTP do regime regular, verificação de status; Simples/DANFSe como planejados.
+- `GET /api/engine/status` + painel na home. Conferido com `next start`: sem env → `nao-configurado`; URL inacessível → `indisponivel`.
+- 36 testes Vitest (config, schemas, erros de rede/timeout/HTTP/contrato, status).
+- Documentos padrão, ADRs 0001–0004, CI (Windows + Ubuntu) e gitleaks.
+
+### Decisões
+
+- npm em vez de pnpm (ADR 0004).
+- Sem Docker Compose: upstream sem Dockerfile, Docker ausente (ADR 0003).
+- O app usa `POST /calculadora/observabilidade/regime-geral` (erros por item) e `GET /calculadora/dados-abertos/versao` (status), e não chama `/versao/status` (contata servidor do governo).
+
+### Pendências / riscos
+
+- O motor oficial ainda **não foi executado** nesta máquina; o cliente foi testado só com `fetch` simulado.
+- Contrato de saída validado apenas no envelope (`objetos[].nObj/estadoItem`).
+
+### Próximo passo objetivo
+
+Clonar `calculadora-rtc-regime-regular` na tag `1.7.2` **fora** deste repositório, gerar o banco com `mvnw.cmd flyway:migrate ...`, subir com o perfil `offline`, apontar `REGIME_REGULAR_ENGINE_URL=http://localhost:8080/api` e confirmar que o painel mostra **Disponível** com a versão. Em seguida, gravar a primeira fixture real da observabilidade.
