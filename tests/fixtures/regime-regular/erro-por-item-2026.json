@@ -1,0 +1,126 @@
+{
+  "exemploId": "erro-por-item-2026",
+  "gravadoEm": "2026-11-20T22:00:35.143Z",
+  "motor": {
+    "upstream": "ReceitaFederal/calculadora-rtc-regime-regular@1.7.2 (32df719)",
+    "endpoint": "POST /calculadora/observabilidade/regime-geral",
+    "versao": {
+      "versaoApp": "1.7.2",
+      "descricaoVersaoApp": "1.7.2",
+      "versaoDb": "V0073",
+      "descricaoVersaoDb": "Nova tabela de Classificações Tributárias (IT 2025.002 v.1.71), publicada em 30/10/2026.",
+      "dataVersaoDb": "2026-11-09",
+      "ambiente": "offline"
+    }
+  },
+  "requisicao": {
+    "id": "exemplo-ficticio-2",
+    "versao": "1.0.0",
+    "dhFatoGerador": "2026-06-01T10:00:00-03:00",
+    "municipio": 4314902,
+    "uf": "RS",
+    "itens": [
+      {
+        "numero": 1,
+        "ncm": "22030000",
+        "cst": "000",
+        "cClassTrib": "000001",
+        "baseCalculo": 100
+      },
+      {
+        "numero": 2,
+        "ncm": "22030000",
+        "cst": "000",
+        "cClassTrib": "999999",
+        "baseCalculo": 50
+      }
+    ]
+  },
+  "status": 200,
+  "warningDadosSimulados": null,
+  "resposta": {
+    "objetos": [
+      {
+        "nObj": 1,
+        "estadoItem": "CALCULADO",
+        "tribCalc": {
+          "IBSCBS": {
+            "CST": "000",
+            "cClassTrib": "000001",
+            "gIBSCBS": {
+              "vBC": "100.00",
+              "gIBSUF": {
+                "pIBSUF": "0.10",
+                "vIBSUF": "0.10"
+              },
+              "gIBSMun": {
+                "pIBSMun": "0.00",
+                "vIBSMun": "0.00"
+              },
+              "vIBS": "0.10",
+              "gCBS": {
+                "pCBS": "0.90",
+                "vCBS": "0.90"
+              }
+            },
+            "memoriaCalculo": {
+              "cbs": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 100,00, com alíquota de 0,90%.",
+              "ibsUF": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 100,00, com alíquota de 0,10%.",
+              "ibsMun": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 100,00, com alíquota de 0,00%."
+            }
+          }
+        }
+      },
+      {
+        "nObj": 2,
+        "estadoItem": "INCONSISTENCIA_ENTRADA",
+        "erros": [
+          {
+            "type": "http://localhost/api/calculadora/observabilidade/erros?codigo=REG-005",
+            "title": "Classificação tributária não encontrada",
+            "code": "REG-005",
+            "pointer": "#/itens/1/cClassTrib",
+            "detail": "Classificação tributária não encontrada para código 999999 e data 2026-06-01 (CBS e IBS)"
+          }
+        ]
+      }
+    ],
+    "total": {
+      "tribCalc": {
+        "IBSCBSTot": {
+          "vBCIBSCBS": "100.00",
+          "gIBS": {
+            "gIBSUF": {
+              "vDif": "0.00",
+              "vDevTrib": "0.00",
+              "vIBSUF": "0.10"
+            },
+            "gIBSMun": {
+              "vDif": "0.00",
+              "vDevTrib": "0.00",
+              "vIBSMun": "0.00"
+            },
+            "vIBS": "0.10",
+            "vCredPres": "0.00",
+            "vCredPresCondSus": "0.00"
+          },
+          "gCBS": {
+            "vDif": "0.00",
+            "vDevTrib": "0.00",
+            "vCBS": "0.90",
+            "vCredPres": "0.00",
+            "vCredPresCondSus": "0.00"
+          },
+          "gMono": {
+            "vIBSMono": "0.00",
+            "vCBSMono": "0.00",
+            "vIBSMonoReten": "0.00",
+            "vCBSMonoReten": "0.00",
+            "vIBSMonoRet": "0.00",
+            "vCBSMonoRet": "0.00"
+          }
+        }
+      }
+    }
+  }
+}
