@@ -1,5 +1,6 @@
 "use client";
 
+import { Play } from "lucide-react";
 import { useState } from "react";
 import { withBasePath } from "@/lib/base-path";
 import { EXEMPLOS } from "@/lib/simulation/exemplos";
@@ -49,15 +50,15 @@ export function SimuladorRegimeRegular() {
   const exemploAtual = EXEMPLOS.find((e) => e.id === exemploId);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      <form onSubmit={simular} className="space-y-3" aria-label="Operação">
+    <div className="grid items-start gap-3 lg:grid-cols-2">
+      <form onSubmit={simular} className="card flex flex-col gap-4 p-6" aria-label="Operação">
         <div className="flex flex-wrap items-end gap-3">
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium">Exemplo fictício</span>
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span className="font-mono text-xs text-fg-3">Exemplo fictício</span>
             <select
               value={exemploId}
               onChange={(e) => carregarExemplo(e.target.value)}
-              className="rounded-md border border-zinc-300 bg-transparent px-2 py-1.5 dark:border-zinc-700"
+              className="field h-9 px-2.5 text-[13px]"
             >
               {EXEMPLOS.map((e) => (
                 <option key={e.id} value={e.id}>
@@ -67,31 +68,32 @@ export function SimuladorRegimeRegular() {
             </select>
           </label>
         </div>
-        {exemploAtual && <p className="text-sm text-zinc-600 dark:text-zinc-400">{exemploAtual.descricao}</p>}
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium">Operação (JSON enviado ao motor)</span>
+        {exemploAtual && <p className="text-[13px] leading-5 text-fg-2">{exemploAtual.descricao}</p>}
+        <label className="flex flex-col gap-1.5 text-sm">
+          <span className="font-mono text-xs text-fg-3">Operação (JSON enviado ao motor)</span>
           <textarea
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
             spellCheck={false}
             rows={22}
-            className="w-full rounded-md border border-zinc-300 bg-zinc-50 p-3 font-mono text-xs leading-relaxed dark:border-zinc-700 dark:bg-zinc-950"
+            className="field p-3 font-mono text-xs leading-5"
           />
         </label>
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs leading-5 text-fg-3">
           Campos conforme <code>OperacaoInput</code> do motor 1.7.2. A partir de 2027 o motor exige{" "}
           <code>aliquotasNominais</code> por item; este app não sugere valores de alíquota.
         </p>
         <button
           type="submit"
           disabled={estado.kind === "enviando"}
-          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+          className="btn btn-primary self-start"
         >
+          <Play aria-hidden="true" />
           {estado.kind === "enviando" ? "Enviando ao motor…" : "Simular"}
         </button>
       </form>
 
-      <section aria-live="polite" aria-label="Resultado" className="min-w-0 space-y-4">
+      <section aria-live="polite" aria-label="Resultado" className="flex min-w-0 flex-col gap-3">
         <Resultado estado={estado} />
       </section>
     </div>
@@ -100,10 +102,10 @@ export function SimuladorRegimeRegular() {
 
 function Resultado({ estado }: { estado: Estado }) {
   if (estado.kind === "ocioso") {
-    return <p className="text-sm text-zinc-500">O resultado aparece aqui depois do envio.</p>;
+    return <Vazio>O resultado aparece aqui depois do envio. Tudo que aparecer vem da resposta do motor.</Vazio>;
   }
   if (estado.kind === "enviando") {
-    return <p className="text-sm text-zinc-500">Aguardando resposta do motor…</p>;
+    return <Vazio>Aguardando resposta do motor…</Vazio>;
   }
   if (estado.kind === "falha-rede") {
     return <Alerta titulo="Não foi possível falar com este app">{estado.mensagem}</Alerta>;
@@ -111,4 +113,10 @@ function Resultado({ estado }: { estado: Estado }) {
   const { resultado, enviado } = estado;
   if (!resultado.ok) return <ErroSimulacao resultado={resultado} enviado={enviado} />;
   return <ResultadoSucesso resultado={resultado} />;
+}
+
+function Vazio({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="card border-dashed border-line-strong bg-transparent p-6 text-[13px] leading-5 text-fg-3">{children}</div>
+  );
 }

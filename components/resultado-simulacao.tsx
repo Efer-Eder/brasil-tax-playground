@@ -1,5 +1,6 @@
 "use client";
 
+import { Download, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import { extrairMemoriaCalculo } from "@/lib/simulation/memoria";
 import type { SimulacaoResultado } from "@/lib/simulation/regime-regular";
@@ -7,51 +8,51 @@ import type { SimulacaoResultado } from "@/lib/simulation/regime-regular";
 const formatar = (valor: unknown) => JSON.stringify(valor, null, 2);
 
 /** Rótulos dos estados de item documentados no upstream (docs/exemplos.md). */
-const ESTADO_ITEM: Record<string, { rotulo: string; tom: string }> = {
-  CALCULADO: { rotulo: "Calculado", tom: "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200" },
-  CALCULO_SIMULADO: { rotulo: "Cálculo simulado", tom: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200" },
-  INCONSISTENCIA_ENTRADA: { rotulo: "Inconsistência na entrada", tom: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200" },
-  NAO_IMPLEMENTADO: { rotulo: "Não implementado no motor", tom: "bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100" },
-  FALHA_TECNICA: { rotulo: "Falha técnica", tom: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200" },
+const ESTADO_ITEM: Record<string, { rotulo: string; classe: string }> = {
+  CALCULADO: { rotulo: "Calculado", classe: "badge ok" },
+  CALCULO_SIMULADO: { rotulo: "Cálculo simulado", classe: "badge warn" },
+  INCONSISTENCIA_ENTRADA: { rotulo: "Inconsistência na entrada", classe: "badge bad" },
+  NAO_IMPLEMENTADO: { rotulo: "Não implementado no motor", classe: "badge" },
+  FALHA_TECNICA: { rotulo: "Falha técnica", classe: "badge bad" },
 };
 
 /** Resultado de sucesso: tudo o que é exibido vem de `resultado` (resposta do motor). */
 export function ResultadoSucesso({ resultado }: { resultado: Extract<SimulacaoResultado, { ok: true }> }) {
   const objetos = resultado.resposta.objetos;
+  const versao = resultado.motor.versao;
 
   return (
     <>
-      <div className="rounded-lg border border-zinc-200 p-4 text-sm dark:border-zinc-800">
-        <dl className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1">
-          <dt className="text-zinc-500">Motor</dt>
+      <div className="card p-5">
+        <dl className="grid grid-cols-[max-content_1fr] gap-x-6 gap-y-2 text-[13px]">
+          <dt className="font-mono text-xs text-fg-3">motor</dt>
           <dd className="font-mono">
-            {resultado.motor.versao?.versaoApp ?? "versão não informada"} · base{" "}
-            {resultado.motor.versao?.versaoDb ?? "—"} ({resultado.motor.versao?.dataVersaoDb ?? "—"})
+            {versao?.versaoApp ?? "versão não informada"} · base {versao?.versaoDb ?? "n/d"} ({versao?.dataVersaoDb ?? "n/d"})
           </dd>
-          <dt className="text-zinc-500">Executado em</dt>
+          <dt className="font-mono text-xs text-fg-3">executado em</dt>
           <dd className="font-mono">{new Date(resultado.executadoEm).toLocaleString("pt-BR")}</dd>
           {resultado.warningDadosSimulados && (
             <>
-              <dt className="text-zinc-500">Aviso do motor</dt>
-              <dd>
-                <code>x-warning-dados-simulados: {resultado.warningDadosSimulados}</code> — o motor indicou que há
-                dados simulados neste resultado.
+              <dt className="font-mono text-xs text-fg-3">aviso do motor</dt>
+              <dd className="text-fg-2">
+                <span className="badge warn">x-warning-dados-simulados: {resultado.warningDadosSimulados}</span>{" "}
+                O motor marcou este resultado como dados simulados.
               </dd>
             </>
           )}
         </dl>
       </div>
 
-      <ol className="space-y-3">
+      <ol className="flex flex-col gap-3">
         {objetos.map((objeto) => (
           <ItemResultado key={objeto.nObj} objeto={objeto} />
         ))}
       </ol>
 
       {"total" in resultado.resposta && resultado.resposta.total !== undefined && (
-        <details className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+        <details className="card group p-5">
           <summary className="cursor-pointer text-sm font-medium">Totais devolvidos pelo motor</summary>
-          <p className="mt-2 text-xs text-zinc-500">Segundo o upstream, os totais somam apenas os itens calculados.</p>
+          <p className="mt-2 text-xs text-fg-3">Segundo o upstream, os totais somam apenas os itens calculados.</p>
           <Json valor={resultado.resposta.total} />
         </details>
       )}
@@ -74,39 +75,40 @@ export function ResultadoSucesso({ resultado }: { resultado: Extract<SimulacaoRe
 }
 
 function ItemResultado({ objeto }: { objeto: { nObj: number; estadoItem: string; [k: string]: unknown } }) {
-  const estado = ESTADO_ITEM[objeto.estadoItem] ?? { rotulo: objeto.estadoItem, tom: ESTADO_ITEM.NAO_IMPLEMENTADO.tom };
+  const estado = ESTADO_ITEM[objeto.estadoItem] ?? { rotulo: objeto.estadoItem, classe: "badge" };
   const memoria = extrairMemoriaCalculo(objeto);
   const erros = Array.isArray(objeto.erros) ? (objeto.erros as Record<string, unknown>[]) : [];
 
   return (
-    <li className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+    <li className="card p-5">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="font-medium">Item {objeto.nObj}</span>
-        <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${estado.tom}`}>{estado.rotulo}</span>
-        <code className="text-xs text-zinc-500">{objeto.estadoItem}</code>
+        <span className="text-[15px] font-semibold tracking-[-0.01em]">Item {objeto.nObj}</span>
+        <span className={estado.classe}>{estado.rotulo}</span>
+        <code className="font-mono text-xs text-fg-3">{objeto.estadoItem}</code>
       </div>
 
       {erros.length > 0 && (
-        <ul className="mt-3 space-y-2 text-sm">
+        <ul className="mt-4 flex flex-col gap-2 text-[13px]">
           {erros.map((erro, i) => (
-            <li key={i} className="rounded-md bg-red-50 p-2 dark:bg-red-950/40">
+            <li key={i} className="rounded-md border border-[rgba(224,100,106,0.24)] bg-[var(--danger-subtle)] p-3">
               <p className="font-medium">
-                {String(erro.code ?? "")} {erro.title ? `— ${String(erro.title)}` : ""}
+                <span className="font-mono">{String(erro.code ?? "")}</span>
+                {erro.title ? `: ${String(erro.title)}` : ""}
               </p>
-              {erro.detail !== undefined && <p>{String(erro.detail)}</p>}
-              {erro.pointer !== undefined && <p className="font-mono text-xs text-zinc-500">{String(erro.pointer)}</p>}
+              {erro.detail !== undefined && <p className="mt-1 text-fg-2">{String(erro.detail)}</p>}
+              {erro.pointer !== undefined && <p className="mt-1 font-mono text-xs text-fg-3">{String(erro.pointer)}</p>}
             </li>
           ))}
         </ul>
       )}
 
       {memoria.length > 0 && (
-        <div className="mt-3 space-y-1 text-sm">
-          <p className="font-medium">Memória de cálculo (texto do motor)</p>
-          <ul className="space-y-1 text-zinc-700 dark:text-zinc-300">
+        <div className="mt-4 text-[13px] leading-5">
+          <p className="font-mono text-xs text-fg-3">memória de cálculo (texto do motor)</p>
+          <ul className="mt-2 flex flex-col gap-2 border-l border-line-strong pl-3 text-fg-2">
             {memoria.map((trecho, i) => (
               <li key={i}>
-                <span className="font-mono text-xs text-zinc-500">
+                <span className="font-mono text-xs text-accent-text">
                   {trecho.grupo}
                   {trecho.tributo && `.${trecho.tributo}`}
                 </span>{" "}
@@ -118,8 +120,8 @@ function ItemResultado({ objeto }: { objeto: { nObj: number; estadoItem: string;
       )}
 
       {"tribCalc" in objeto && (
-        <details className="mt-3">
-          <summary className="cursor-pointer text-sm">Valores do item (JSON do motor)</summary>
+        <details className="mt-4">
+          <summary className="cursor-pointer text-[13px] text-fg-2 hover:text-fg-1">Valores do item (JSON do motor)</summary>
           <Json valor={objeto.tribCalc} />
         </details>
       )}
@@ -148,34 +150,31 @@ export function ErroSimulacao({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col gap-3">
       <Alerta titulo={`${titulos[erro.tipo]} (HTTP ${resultado.httpStatus})`}>
         {erro.mensagem}
-        {(erro.tipo === "nao-configurado" || erro.tipo === "indisponivel") &&
-          " Nenhum valor é exibido sem o motor oficial."}
+        {(erro.tipo === "nao-configurado" || erro.tipo === "indisponivel") && " Nenhum valor é exibido sem o motor oficial."}
       </Alerta>
       {erro.tipo === "validacao" && (
-        <ul className="list-disc space-y-1 pl-5 text-sm">
+        <ul className="card flex flex-col gap-1.5 p-5 text-[13px]">
           {erro.problemas.map((p, i) => (
             <li key={i}>
-              <code>{p.caminho}</code>: {p.mensagem}
+              <code className="font-mono text-accent-text">{p.caminho}</code>: <span className="text-fg-2">{p.mensagem}</span>
             </li>
           ))}
         </ul>
       )}
       {(erro.tipo === "erro-do-motor" || erro.tipo === "contrato") && (
-        <div>
-          <p className="text-sm font-medium">
-            Corpo devolvido pelo motor{erro.tipo === "erro-do-motor" ? ` (HTTP ${erro.statusMotor})` : ""}
+        <div className="card p-5">
+          <p className="font-mono text-xs text-fg-3">
+            corpo devolvido pelo motor{erro.tipo === "erro-do-motor" ? ` (HTTP ${erro.statusMotor})` : ""}
           </p>
           <Json valor={erro.corpo} />
         </div>
       )}
-      <details>
-        <summary className="cursor-pointer text-sm">JSON enviado</summary>
-        <pre className="mt-2 max-h-80 overflow-auto rounded-md bg-zinc-50 p-3 font-mono text-xs dark:bg-zinc-950">
-          {enviado}
-        </pre>
+      <details className="card p-5">
+        <summary className="cursor-pointer text-[13px] text-fg-2 hover:text-fg-1">JSON enviado</summary>
+        <pre className="code mt-3 max-h-80">{enviado}</pre>
       </details>
     </div>
   );
@@ -195,8 +194,8 @@ function Inspetor({ requisicao, resposta, exportar }: { requisicao: unknown; res
   }
 
   return (
-    <div className="rounded-lg border border-zinc-200 dark:border-zinc-800">
-      <div className="flex flex-wrap items-center gap-2 border-b border-zinc-200 p-2 dark:border-zinc-800" role="tablist">
+    <div className="card overflow-hidden">
+      <div className="flex flex-wrap items-center gap-1 border-b border-line-subtle bg-[rgba(17,18,21,0.72)] p-2" role="tablist">
         {(["resposta", "requisicao"] as const).map((id) => (
           <button
             key={id}
@@ -204,20 +203,17 @@ function Inspetor({ requisicao, resposta, exportar }: { requisicao: unknown; res
             type="button"
             aria-selected={aba === id}
             onClick={() => setAba(id)}
-            className={`rounded-md px-3 py-1 text-sm ${aba === id ? "bg-zinc-200 font-semibold dark:bg-zinc-800" : "hover:bg-zinc-100 dark:hover:bg-zinc-900"}`}
+            className={`rounded-md px-3 py-1.5 text-[13px] font-medium ${aba === id ? "bg-surface-3 text-fg-1" : "text-fg-2 hover:bg-[var(--surface-hover)] hover:text-fg-1"}`}
           >
             {id === "resposta" ? "Resposta do motor" : "Requisição enviada"}
           </button>
         ))}
-        <button
-          type="button"
-          onClick={baixar}
-          className="ml-auto rounded-md border border-zinc-300 px-3 py-1 text-sm hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
-        >
+        <button type="button" onClick={baixar} className="btn btn-secondary btn-sm ml-auto">
+          <Download aria-hidden="true" />
           Exportar JSON
         </button>
       </div>
-      <div className="p-2" role="tabpanel">
+      <div className="p-3" role="tabpanel">
         <Json valor={aba === "resposta" ? resposta : requisicao} />
       </div>
     </div>
@@ -225,18 +221,17 @@ function Inspetor({ requisicao, resposta, exportar }: { requisicao: unknown; res
 }
 
 function Json({ valor }: { valor: unknown }) {
-  return (
-    <pre className="mt-2 max-h-96 overflow-auto rounded-md bg-zinc-50 p-3 font-mono text-xs dark:bg-zinc-950">
-      {typeof valor === "string" ? valor : formatar(valor)}
-    </pre>
-  );
+  return <pre className="code mt-3 max-h-96">{typeof valor === "string" ? valor : formatar(valor)}</pre>;
 }
 
 export function Alerta({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
-    <div role="alert" className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm dark:border-red-800 dark:bg-red-950/40">
-      <p className="font-semibold">{titulo}</p>
-      <p className="mt-1">{children}</p>
+    <div role="alert" className="card flex gap-3 border-[rgba(224,100,106,0.24)] bg-[#1a1213] p-5 text-[13px] leading-5">
+      <TriangleAlert className="mt-0.5 h-4 w-4 flex-none text-bad" aria-hidden="true" />
+      <div>
+        <p className="font-semibold text-fg-1">{titulo}</p>
+        <p className="mt-1 text-fg-2">{children}</p>
+      </div>
     </div>
   );
 }
