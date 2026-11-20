@@ -101,3 +101,23 @@ describe("simularRegimeRegular", () => {
     expect(!r.ok && r.erro).toMatchObject({ statusMotor: 422, corpo: problem });
   });
 });
+
+describe("version cache", () => {
+  it("queries the engine version once per TTL instead of on every simulation", async () => {
+    const { limparCacheVersao } = await import("@/lib/simulation/regime-regular");
+    limparCacheVersao();
+    const a = adapter();
+    let agora = new Date("2026-11-20T00:00:00Z").getTime();
+    const deps = { env: ENV, createClient: () => a, cacheVersaoMs: 60_000, now: () => new Date(agora) };
+
+    const r1 = await simularRegimeRegular(JSON.stringify(OPERACAO), deps);
+    await simularRegimeRegular(JSON.stringify(OPERACAO), deps);
+    expect(a.getVersao).toHaveBeenCalledTimes(1);
+    expect(r1.ok && r1.motor.versao).toEqual({ versaoApp: "x.y.z" });
+
+    agora += 61_000;
+    await simularRegimeRegular(JSON.stringify(OPERACAO), deps);
+    expect(a.getVersao).toHaveBeenCalledTimes(2);
+    limparCacheVersao();
+  });
+});

@@ -24,7 +24,11 @@ export async function POST(request: Request) {
     );
   }
 
-  const resultado = await simularRegimeRegular(body, { maxItens: limites.maxItens, limitador });
+  const resultado = await simularRegimeRegular(body, {
+    maxItens: limites.maxItens,
+    limitador,
+    cacheVersaoMs: 60_000,
+  });
   const headers: Record<string, string> = { ...CORS_HEADERS, "Cache-Control": "no-store" };
   if (!resultado.ok && resultado.erro.tipo === "ocupado") headers["Retry-After"] = "5";
   return Response.json(resultado, { status: resultado.httpStatus, headers });

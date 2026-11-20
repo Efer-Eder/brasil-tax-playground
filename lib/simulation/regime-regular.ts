@@ -57,6 +57,33 @@ export interface SimularDeps {
   maxItens?: number | null;
   /** Limita chamadas simultâneas ao motor (instância pública). */
   limitador?: LimitadorConcorrencia;
+  /**
+   * Guarda a versão do motor por este tempo (ms) em vez de consultá-la a cada
+   * simulação. A versão só muda quando o motor é atualizado.
+   */
+  cacheVersaoMs?: number;
+}
+
+const cacheVersao = new Map<string, { versao: EngineVersion; expiraEm: number }>();
+
+/** Limpa o cache de versão (testes). */
+export function limparCacheVersao() {
+  cacheVersao.clear();
+}
+
+async function obterVersao(
+  client: RegimeRegularAdapter,
+  baseUrl: string,
+  ttlMs: number | undefined,
+  agora: number,
+): Promise<EngineVersion | null> {
+  if (ttlMs) {
+    const salvo = cacheVersao.get(baseUrl);
+    if (salvo && salvo.expiraEm > agora) return salvo.versao;
+  }
+  const versao = await client.getVersao().catch(() => null);
+  if (ttlMs && versao) cacheVersao.set(baseUrl, { versao, expiraEm: agora + ttlMs });
+  return versao;
 }
 
 /** Recebe o corpo cru da requisição (texto) e executa a simulação. */
@@ -97,11 +124,14 @@ export async function simularRegimeRegular(rawBody: string, deps: SimularDeps = 
 
   try {
     const executar = <T>(tarefa: () => Promise<T>) => (deps.limitador ? deps.limitador.executar(tarefa) : tarefa());
-    const { resultado, versao } = await executar(async () => ({
-      resultado: await client.calcularComObservabilidade(parsed.data),
-      // A versão é informativa: se falhar, o cálculo continua válido.
-      versao: await client.getVersao().catch(() => null),
-    }));
+    const resultado = await executar(() => client.calcularComObservabilidade(parsed.data));
+    // A versão é informativa: se falhar, o cálculo continua válido.
+    const versao = await obterVersao(
+      client,
+      config.config.baseUrl,
+      deps.cacheVersaoMs,
+      (deps.now?.() ?? new Date()).getTime(),
+    );
     return {
       ok: true,
       httpStatus: 200,
