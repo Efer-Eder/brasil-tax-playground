@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { EngineStatusPanel } from "@/components/engine-status-panel";
 import { ENGINES } from "@/lib/tax-engine";
 
@@ -45,6 +46,13 @@ export default function Home() {
 
       <EngineStatusPanel />
 
+      <Link
+        href="/simular"
+        className="inline-block rounded-md bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+      >
+        Simular uma operação do regime regular →
+      </Link>
+
       <section aria-labelledby="integracoes" className="space-y-3">
         <h2 id="integracoes" className="text-xl font-semibold">
           Integrações
@@ -70,8 +78,8 @@ export default function Home() {
           ))}
         </ul>
         <p className="text-sm text-zinc-500">
-          O formulário de simulação ainda não existe. O próximo passo é integrar o regime regular de ponta a ponta;
-          veja o ROADMAP no repositório.
+          O regime regular já pode ser testado pelo editor JSON. Formulário guiado, Simples Nacional e DANFSe estão
+          no ROADMAP do repositório.
         </p>
       </section>
 
