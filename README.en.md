@@ -2,7 +2,7 @@
 
 [Português](README.md)
 
-> **Work in progress.** There is no simulation form yet. Today the app explains the project scope and checks whether the official engine is configured and responding.
+> **Work in progress.** You can already send a regular-regime transaction to the official engine through a JSON editor and inspect the response. The guided form does not exist yet.
 
 > Independent, unofficial tool. It does not replace accounting or tax advice and has no affiliation with Brazil's Federal Revenue Service (Receita Federal).
 
@@ -13,13 +13,14 @@ Core rule: **no tax rate, rule or calculation is invented here**. Every number s
 ## What exists today
 
 - Home page describing the scope (CBS, IBS, IS) and a persistent legal notice on every page.
+- `/simular` page: JSON editor with three fictitious examples, sent to the engine through the BFF (`POST /api/simular/regime-regular`), per-item state, errors, calculation trail (text produced by the engine), engine version, request/response inspector and JSON export.
 - Status panel for the regular-regime engine: *not configured*, *unavailable* or *available* (with the version reported by the engine).
 - `lib/tax-engine/`: types, env-based configuration, zod schemas mirroring the upstream input, and an HTTP client for the regular regime with timeout and typed errors.
 - Vitest tests for configuration, schemas and unavailability handling.
 
 | Integration | Status in this project |
 |---|---|
-| [Regular regime](https://github.com/ReceitaFederal/calculadora-rtc-regime-regular) | In progress (adapter and status done; form pending) |
+| [Regular regime](https://github.com/ReceitaFederal/calculadora-rtc-regime-regular) | In progress (simulation via JSON editor; guided form pending) |
 | [Simples Nacional](https://github.com/ReceitaFederal/calculadora-rtc-simples-nacional) | Planned |
 | [DANFSe generator](https://github.com/ReceitaFederal/calculadora-rtc-gerador-danfse) | Planned (renders a PDF from XML; does not calculate taxes) |
 
@@ -51,7 +52,7 @@ REGIME_REGULAR_ENGINE_URL=http://localhost:8080/api
 
 ## Limitations
 
-- No simulation yet; the regular-regime form is the next step.
+- Input is a JSON editor; the guided form and end-to-end tests do not exist yet.
 - The connection was verified against the official engine 1.7.2 running locally (status and contract tests); CI uses a mocked `fetch`.
 - No Docker Compose: the regular-regime upstream ships no Dockerfile (see [ADR 0003](docs/adr/0003-sem-docker-compose-por-enquanto.md)).
 

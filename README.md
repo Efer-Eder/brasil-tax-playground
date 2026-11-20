@@ -2,7 +2,7 @@
 
 [English](README.en.md)
 
-> **Em desenvolvimento.** Ainda não há formulário de simulação. Hoje o app mostra o escopo do projeto e verifica se o motor oficial está configurado e respondendo.
+> **Em desenvolvimento.** Já dá para enviar uma operação do regime regular ao motor oficial pelo editor JSON e ver a resposta. O formulário guiado ainda não existe.
 
 > Ferramenta independente, não oficial e não substitui orientação contábil ou tributária. Sem vínculo com a Receita Federal.
 
@@ -13,13 +13,14 @@ Princípio central: **nenhuma alíquota, regra ou cálculo fiscal é inventado a
 ## O que existe hoje
 
 - Página inicial com o escopo (CBS, IBS, IS) e o aviso legal fixo em todas as páginas.
+- Página `/simular`: editor JSON com três exemplos fictícios, envio ao motor pelo BFF (`POST /api/simular/regime-regular`), estado de cada item, erros, memória de cálculo (texto do próprio motor), versão do motor, inspetor de requisição/resposta e exportação em JSON.
 - Painel de status do motor de regime regular: *não configurado*, *indisponível* ou *disponível* (com a versão informada pelo motor).
 - `lib/tax-engine/`: tipos, configuração por variável de ambiente, schemas zod que espelham a entrada do upstream e cliente HTTP do regime regular com timeout e erros tipados.
 - Testes Vitest da configuração, dos schemas e do tratamento de indisponibilidade.
 
 | Integração | Estado neste projeto |
 |---|---|
-| [Regime regular](https://github.com/ReceitaFederal/calculadora-rtc-regime-regular) | Em integração (adapter e status prontos; formulário pendente) |
+| [Regime regular](https://github.com/ReceitaFederal/calculadora-rtc-regime-regular) | Em integração (simulação via editor JSON; formulário guiado pendente) |
 | [Simples Nacional](https://github.com/ReceitaFederal/calculadora-rtc-simples-nacional) | Planejado |
 | [Gerador DANFSe](https://github.com/ReceitaFederal/calculadora-rtc-gerador-danfse) | Planejado (gera PDF a partir de XML; não calcula tributos) |
 
@@ -65,7 +66,7 @@ REGIME_REGULAR_ENGINE_URL=http://localhost:8080/api
 
 ## Limitações
 
-- Ainda não há simulação: o formulário do regime regular é o próximo passo.
+- A entrada é um editor JSON; o formulário guiado e os testes ponta a ponta ainda não existem.
 - A conexão foi verificada contra o motor oficial 1.7.2 rodando localmente (status e contrato); a CI usa `fetch` simulado.
 - Sem Docker Compose: o upstream do regime regular não publica Dockerfile (ver [ADR 0003](docs/adr/0003-sem-docker-compose-por-enquanto.md)).
 
