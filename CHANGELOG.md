@@ -6,6 +6,9 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); 
 
 ### Adicionado
 
+- Instância pública em https://efer.online/projeto/brasil-tax-playground/ com API em `/api/brasil-tax-playground/`: Docker Compose (motor oficial + app), Nginx com rate limit, fila com limite de concorrência, teto de 50 itens, timeouts em camadas e CORS aberto. Medições e contas em `docs/deploy-efer-online.md`.
+- Build standalone com `NEXT_BASE_PATH` e script `deploy/deploy.ps1`.
+
 - Fixtures gravadas do motor oficial 1.7.2 (3 cenários), teste de paridade resposta × tela, regressão contra o motor real e E2E com Playwright usando replay das fixtures.
 
 - Página `/simular` com editor JSON, exemplos fictícios, resultado por item, memória de cálculo do motor, inspetor e exportação JSON.

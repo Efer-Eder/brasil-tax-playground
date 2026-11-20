@@ -21,10 +21,15 @@ Nada aqui está pronto, a não ser o que estiver marcado. Ordem sujeita a mudan�
 - [x] Erro de validação (ex.: HTTP 422/`INCONSISTENCIA_ENTRADA`) explicado ao usuário.
 - [x] Testes ponta a ponta com Playwright (replay das fixtures na CI).
 
+## Instância pública
+
+- [x] Publicar app + motor oficial em efer.online com API própria, limites e timeouts medidos.
+- [ ] Acompanhar uso e latência por algumas semanas e revisar os limites.
+- [ ] Rollback automatizado para a release anterior.
+
 ## Depois
 
 - Simples Nacional (porta 8082).
 - DANFSe: upload de XML e geração de PDF pelo serviço oficial.
-- Docker Compose, se o upstream publicar Dockerfile/imagem ou se for possível testar um Compose fiel ao README.
 - Testes de contrato/regressão contra novas versões do upstream.
 - Biblioteca de cenários, comparação entre anos-calendário, exportação PDF.

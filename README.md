@@ -6,6 +6,8 @@
 
 > Ferramenta independente, não oficial e não substitui orientação contábil ou tributária. Sem vínculo com a Receita Federal.
 
+**Experimente online:** <https://efer.online/projeto/brasil-tax-playground/> (instância pública com o motor oficial 1.7.2; detalhes e limites em [docs/deploy-efer-online.md](docs/deploy-efer-online.md)).
+
 Interface web educacional para estudar os **motores de código aberto da Reforma Tributária do Consumo** (CBS, IBS e Imposto Seletivo) publicados pela Receita Federal no GitHub. A ideia é preencher uma operação, enviar ao motor que **você** roda localmente e ver o resultado, a memória de cálculo e o JSON técnico.
 
 Princípio central: **nenhuma alíquota, regra ou cálculo fiscal é inventado aqui**. Todo número exibido virá da resposta do motor oficial, com a versão dele. Sem motor disponível, o app diz isso e não mostra valores.
@@ -23,6 +25,19 @@ Princípio central: **nenhuma alíquota, regra ou cálculo fiscal é inventado a
 | [Regime regular](https://github.com/ReceitaFederal/calculadora-rtc-regime-regular) | Em integração (simulação via editor JSON; formulário guiado pendente) |
 | [Simples Nacional](https://github.com/ReceitaFederal/calculadora-rtc-simples-nacional) | Planejado |
 | [Gerador DANFSe](https://github.com/ReceitaFederal/calculadora-rtc-gerador-danfse) | Planejado (gera PDF a partir de XML; não calcula tributos) |
+
+## API pública
+
+Sem cadastro e sem chave, com CORS aberto:
+
+```powershell
+curl.exe https://efer.online/api/brasil-tax-playground/engine/status
+curl.exe -X POST https://efer.online/api/brasil-tax-playground/simular/regime-regular -H "Content-Type: application/json" --data-binary "@operacao.json"
+```
+
+O corpo é a operação no formato `OperacaoInput` do motor oficial (veja os exemplos na página `/simular`). A resposta traz a requisição, a resposta crua do motor, a versão dele e o aviso `x-warning-dados-simulados`, quando o motor envia.
+
+Limites da instância: 2 req/s por cliente (rajada de 20), até 50 itens por operação e corpo de até 512 KB. Acima disso a API responde 429, 413 ou 503 com `Retry-After`. Para volume maior, rode o motor localmente.
 
 ## Rodar localmente (Windows)
 
@@ -63,6 +78,7 @@ REGIME_REGULAR_ENGINE_URL=http://localhost:8080/api
 
 - [Integração com os motores oficiais](docs/upstream-integration.md)
 - [Notas de conformidade](docs/compliance-notes.md)
+- [Instância pública: arquitetura, medições e limites](docs/deploy-efer-online.md)
 - [Decisões de arquitetura (ADRs)](docs/adr/)
 - [Progresso](PROGRESS.md) · [Roadmap](ROADMAP.md) · [Changelog](CHANGELOG.md)
 
@@ -70,7 +86,7 @@ REGIME_REGULAR_ENGINE_URL=http://localhost:8080/api
 
 - A entrada é um editor JSON; o formulário guiado ainda não existe.
 - A conexão foi verificada contra o motor oficial 1.7.2 rodando localmente (status e contrato); a CI usa `fetch` simulado.
-- Sem Docker Compose: o upstream do regime regular não publica Dockerfile (ver [ADR 0003](docs/adr/0003-sem-docker-compose-por-enquanto.md)).
+- O Docker Compose em `deploy/` é o da instância pública ([ADR 0005](docs/adr/0005-instancia-publica-em-efer-online.md)); para desenvolvimento local, o motor continua rodando direto com Java.
 
 ## Contribuir
 

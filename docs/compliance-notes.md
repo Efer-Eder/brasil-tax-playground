@@ -29,6 +29,13 @@ Regras que valem para todo código, documentação e exemplo deste repositório.
 - Sem analytics ou telemetria.
 - O app não chama `GET /versao/status` do motor, que por padrão consulta um servidor do governo (ver `docs/upstream-integration.md`).
 
+## Instância pública (efer.online)
+
+- O app não grava as operações enviadas. Nem o app nem o motor registram o corpo das requisições.
+- O Nginx da VPS mantém o log de acesso padrão (IP, data, caminho e status), sem o corpo. Esse log existe para operação e segurança do servidor.
+- A API não tem cadastro, cookies nem chave; o CORS é aberto. Os limites de uso protegem a instância e não envolvem identificação de pessoas.
+- A instância roda o motor oficial sem modificações. A versão em uso aparece em toda resposta e na página inicial.
+
 ## Mudanças de norma ou do upstream
 
 - Cada adapter registra a referência (tag/commit) consultada.

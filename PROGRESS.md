@@ -1,5 +1,22 @@
 # Progresso
 
+## 2026-11-20 — Instância pública em efer.online
+
+**Status:** no ar em https://efer.online/projeto/brasil-tax-playground/, com API em https://efer.online/api/brasil-tax-playground/.
+
+### Feito
+
+- Medi o motor com as flags de produção (heap 320 MB, 2 núcleos), localmente: pico de 441 MB, ~407 req/s com 1 item e ~25 req/s com 50 itens.
+- Docker Compose com o motor oficial 1.7.2 (rede interna, sem porta publicada, 640 MB / 1,0 CPU) e o app standalone (256 MB / 0,75 CPU, só em 127.0.0.1).
+- App: basePath configurável, fila com limite de concorrência (3, fila 32, espera 3 s → 503), teto de 50 itens (413), cache de 60 s da versão do motor e CORS aberto.
+- Nginx: rate limit por cliente via `CF-Connecting-IP` (2 req/s, rajada 20), limite global de 30 req/s, 10 conexões por cliente, 429 em JSON, corpo de até 512 KB e timeouts de 15 s.
+- Validado em produção: páginas 200, status `disponivel` com 1.7.2/V0073, simulação 200, 51 itens → 413, 40 requisições simultâneas → 10 × 200 e 30 × 429. As rotas públicas dos outros serviços da VPS ficaram iguais antes e depois.
+- Medido na VPS: ~30 req/s com 1 item (p50 ~31 ms) e ~6 req/s com 50 itens (p95 ~600 ms); memória do motor 399–474 MB.
+
+### Próximo passo objetivo
+
+Acompanhar latência e uso reais por uma semana (logs do Nginx e `docker stats`) e revisar os limites com dados de tráfego real.
+
 ## 2026-11-20 — Fixtures reais, paridade e E2E
 
 **Status:** critérios de teste da v0.1.0 cobertos para o regime regular via editor JSON.

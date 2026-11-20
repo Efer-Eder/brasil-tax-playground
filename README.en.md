@@ -6,6 +6,8 @@
 
 > Independent, unofficial tool. It does not replace accounting or tax advice and has no affiliation with Brazil's Federal Revenue Service (Receita Federal).
 
+**Try it online:** <https://efer.online/projeto/brasil-tax-playground/>. Public API at `https://efer.online/api/brasil-tax-playground/` (`GET engine/status`, `POST simular/regime-regular`): no sign-up, open CORS, 2 req/s per client (burst 20), up to 50 items per operation. Details in [docs/deploy-efer-online.md](docs/deploy-efer-online.md) (Portuguese).
+
 An educational web interface for exploring the **open-source engines of Brazil's consumption tax reform** (CBS, IBS and the Selective Tax, IS) that Receita Federal published on GitHub. The goal: fill in a transaction, send it to an engine **you** run locally, and inspect the result, the calculation trail and the raw JSON.
 
 Core rule: **no tax rate, rule or calculation is invented here**. Every number shown will come from the official engine's response, together with its version. If the engine is unavailable, the app says so and shows no values.
@@ -54,7 +56,7 @@ REGIME_REGULAR_ENGINE_URL=http://localhost:8080/api
 
 - Input is a JSON editor; the guided form does not exist yet.
 - The connection was verified against the official engine 1.7.2 running locally (status and contract tests); CI uses a mocked `fetch`.
-- No Docker Compose: the regular-regime upstream ships no Dockerfile (see [ADR 0003](docs/adr/0003-sem-docker-compose-por-enquanto.md)).
+- The Docker Compose in `deploy/` is for the public instance ([ADR 0005](docs/adr/0005-instancia-publica-em-efer-online.md)); for local development the engine still runs directly on Java.
 
 ## License
 
