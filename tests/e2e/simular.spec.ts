@@ -26,6 +26,12 @@ test("a home mostra o motor disponível com a versão informada por ele", async 
   await expect(page.getByText(versao.versaoDb, { exact: true })).toBeVisible();
 });
 
+test("o card do GitHub falha de forma explícita quando a API não responde", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByText("Não deu para falar com a API do GitHub agora")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Abrir no GitHub" })).toBeVisible();
+});
+
 test("simula o item único e mostra a memória de cálculo do motor", async ({ page }) => {
   const f = fixture("item-unico-2026");
   const memoria = f.resposta.objetos[0].tribCalc.IBSCBS.memoriaCalculo.cbs as string;

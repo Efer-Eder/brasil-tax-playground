@@ -32,6 +32,8 @@ export default defineConfig({
         PORT: String(APP_PORT),
         HOSTNAME: "127.0.0.1",
         REGIME_REGULAR_ENGINE_URL: `http://127.0.0.1:${ENGINE_PORT}/api`,
+        // O card do GitHub não chama a API real nos testes (o replay responde 404).
+        GITHUB_API_BASE: `http://127.0.0.1:${ENGINE_PORT}/github`,
         NEXT_TELEMETRY_DISABLED: "1",
       },
       reuseExistingServer: false,
