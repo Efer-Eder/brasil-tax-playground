@@ -39,13 +39,13 @@ describe("createRegimeRegularHttpClient", () => {
   it("posts the operation as JSON and returns the engine body untouched", async () => {
     const body = { objetos: [{ nObj: 1, estadoItem: "CALCULO_SIMULADO", tribCalc: { qualquer: "coisa" } }] };
     const fetchMock = vi.fn<typeof fetch>(async () =>
-      jsonResponse(body, { headers: { "x-warning-dados-simulados": "motivo do motor" } }),
+      jsonResponse(body, { headers: { "x-warning-dados-simulados": "6" } }),
     );
 
     const result = await client(fetchMock).calcularComObservabilidade(operacao);
 
     expect(result.data).toEqual(body);
-    expect(result.avisos).toEqual(["motivo do motor"]);
+    expect(result.warningDadosSimulados).toBe("6");
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe(`${BASE}${REGIME_REGULAR_PATHS.observabilidade}`);
     expect(init?.method).toBe("POST");

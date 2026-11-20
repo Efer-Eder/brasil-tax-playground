@@ -27,8 +27,12 @@ export const regimeRegularDescriptor: EngineDescriptor = {
 export interface EngineCallResult<T> {
   data: T;
   status: number;
-  /** Cabeçalhos relevantes devolvidos pelo motor (ex.: x-warning-dados-simulados). */
-  avisos: string[];
+  /**
+   * Valor cru do header `x-warning-dados-simulados`, ou null se ausente.
+   * No upstream 1.7.2 é um código numérico do enum `TipoWarningDadosSimulados`
+   * (ex.: "6" = CASO_CALCULOS_SIMULADOS). Repassado sem interpretação.
+   */
+  warningDadosSimulados: string | null;
 }
 
 /**
@@ -114,11 +118,10 @@ export function createRegimeRegularHttpClient(
       );
     }
 
-    const warning = response.headers.get(WARNING_HEADER);
     return {
       data: parsed.data,
       status: response.status,
-      avisos: warning ? [warning] : [],
+      warningDadosSimulados: response.headers.get(WARNING_HEADER),
     };
   }
 
