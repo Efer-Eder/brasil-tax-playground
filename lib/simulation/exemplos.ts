@@ -47,6 +47,17 @@ export const EXEMPLOS: ExemploOperacao[] = [
     },
   },
   {
+    id: "servico-reducao-2026",
+    titulo: "Serviço com redução (2026)",
+    descricao:
+      "Um serviço identificado por NBS com CST 200 e cClassTrib 200028. O tratamento (incluindo eventual redução) é definido pela base do motor.",
+    operacao: {
+      id: "exemplo-ficticio-4",
+      ...base,
+      itens: [{ numero: 1, nbs: "122011200", cst: "200", cClassTrib: "200028", baseCalculo: 1200.0 }],
+    },
+  },
+  {
     id: "invalido-estrutural",
     titulo: "Entrada inválida",
     descricao: "CST com letras e sem itens válidos: a validação estrutural barra antes de chamar o motor.",
