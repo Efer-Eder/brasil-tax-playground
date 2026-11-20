@@ -1,5 +1,21 @@
 # Progresso
 
+## 2026-11-20 — Primeira simulação de ponta a ponta
+
+**Status:** regime regular simulável pelo editor JSON, verificado contra o motor oficial 1.7.2 local.
+
+### Feito
+
+- `lib/simulation/regime-regular.ts`: valida o JSON (zod), chama `calcularComObservabilidade`, consulta a versão e devolve requisição + resposta crua. Erros: JSON inválido 400, validação 422 (com caminhos), não configurado 503, indisponível 503/504, erro do motor 502 (corpo ProblemDetail preservado), contrato 502.
+- `POST /api/simular/regime-regular` (limite de 500 KB).
+- `/simular`: editor JSON, 3 exemplos fictícios, estado por item, erros (`code`, `title`, `detail`, `pointer`), memória de cálculo como texto do motor, valores do item em JSON, totais, aviso `x-warning-dados-simulados`, versão do motor, inspetor e exportação JSON.
+- Verificado no navegador contra o motor: item único → `CALCULADO`; erro em um item → item 2 `INCONSISTENCIA_ENTRADA` `REG-005`; entrada inválida → 422 local com 3 problemas.
+- 49 testes unitários.
+
+### Próximo passo objetivo
+
+Gravar as respostas reais dos três exemplos como fixtures (com versão 1.7.2/V0073) e criar o teste de paridade "resposta do motor × o que a tela mostra"; depois, Playwright para o fluxo `/simular`.
+
 ## 2026-11-20 — Motor oficial rodando localmente
 
 **Status:** integração de status verificada contra o motor real; simulação na UI ainda não existe.

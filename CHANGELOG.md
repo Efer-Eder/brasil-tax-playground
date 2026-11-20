@@ -6,6 +6,9 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); 
 
 ### Adicionado
 
+- Página `/simular` com editor JSON, exemplos fictícios, resultado por item, memória de cálculo do motor, inspetor e exportação JSON.
+- Rota `POST /api/simular/regime-regular` com validação estrutural e mapeamento explícito de erros (400/422/503/504/502).
+
 - App Next.js + TypeScript + Tailwind com página inicial de escopo (CBS, IBS, IS).
 - Aviso persistente "Ferramenta independente, não oficial e não substitui orientação contábil ou tributária".
 - `lib/tax-engine/`: tipos, configuração via `REGIME_REGULAR_ENGINE_URL`, schemas zod espelhando `OperacaoInput` do upstream (1.7.2) e cliente HTTP do regime regular com timeout e erros tipados.
