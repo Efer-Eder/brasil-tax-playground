@@ -1,0 +1,55 @@
+# Instância pública em efer.online. Ver docs/deploy-efer-online.md.
+#
+# - rtc-engine: motor oficial, SEM porta publicada, só na rede interna.
+# - app: Next.js (UI + API pública), publicado apenas em 127.0.0.1 para o Nginx.
+name: brasil-tax-playground
+
+services:
+  rtc-engine:
+    build: ./engine
+    image: brasil-tax-playground-engine:1.7.2
+    restart: unless-stopped
+    networks: [interna]
+    mem_limit: 640m
+    memswap_limit: 640m
+    cpus: 1.0
+    pids_limit: 256
+    read_only: true
+    # exec: o driver sqlite-jdbc extrai e carrega sua biblioteca nativa em /tmp.
+    tmpfs: ["/tmp:size=64m,exec"]
+    security_opt: ["no-new-privileges:true"]
+    logging:
+      driver: json-file
+      options: { max-size: "15m", max-file: "3" }
+
+  app:
+    build: ./app
+    image: brasil-tax-playground-app:latest
+    restart: unless-stopped
+    depends_on: [rtc-engine]
+    ports: ["127.0.0.1:3020:3000"]
+    networks: [interna, publica]
+    environment:
+      REGIME_REGULAR_ENGINE_URL: http://rtc-engine:8080/api
+      REGIME_REGULAR_ENGINE_TIMEOUT_MS: "8000"
+      SIMULACAO_MAX_CONCORRENCIA: "3"
+      SIMULACAO_MAX_FILA: "32"
+      SIMULACAO_MAX_ESPERA_MS: "3000"
+      SIMULACAO_MAX_ITENS: "50"
+    mem_limit: 256m
+    memswap_limit: 256m
+    cpus: 0.75
+    pids_limit: 128
+    read_only: true
+    tmpfs: ["/tmp:size=32m"]
+    security_opt: ["no-new-privileges:true"]
+    logging:
+      driver: json-file
+      options: { max-size: "15m", max-file: "3" }
+
+networks:
+  # Sem saída para a internet: o motor não precisa dela.
+  interna:
+    internal: true
+  # Só para publicar a porta do app em 127.0.0.1.
+  publica: {}
