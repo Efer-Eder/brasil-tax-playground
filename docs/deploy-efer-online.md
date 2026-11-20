@@ -97,7 +97,7 @@ VPS: 2 vCPU, ~3,9 GB de RAM, ~1,9 GB disponíveis antes do deploy, compartilhada
 
 ### Rate limit no Nginx
 
-O site fica atrás do Cloudflare e o Nginx não usa `real_ip`, então a chave por cliente é `CF-Connecting-IP` (com `$binary_remote_addr` como reserva).
+O site fica atrás do Cloudflare e o Nginx não usa `real_ip`, então `$remote_addr` é o IP do Cloudflare. A chave por cliente é o `CF-Connecting-IP`, **aceito só quando a conexão vem de uma faixa oficial do Cloudflare** (`geo` com a lista de https://www.cloudflare.com/ips/); fora delas, vale o `$remote_addr`. Conferido: acessando a origem com 30 cabeçalhos forjados diferentes, todos caem no mesmo balde (21 × 200 e o resto 429).
 
 | Zona | Taxa | Burst | Conta |
 |---|---|---|---|
