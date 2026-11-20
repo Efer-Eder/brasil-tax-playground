@@ -5,6 +5,10 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    groups:
+      # react e react-dom precisam ter exatamente a mesma versão.
+      react:
+        patterns: ["react", "react-dom"]
     ignore:
       # Os tipos acompanham a versão do Node usada no projeto (24).
       - dependency-name: "@types/node"
