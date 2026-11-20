@@ -1,7 +1,7 @@
 # ADR 0003 — Sem Docker Compose por enquanto
 
 - Data: 2026-11-20
-- Status: Aceito (revisar quando houver base oficial)
+- Status: Substituído em parte pelo [ADR 0005](0005-instancia-publica-em-efer-online.md) (Compose de execução para a instância pública)
 
 ## Contexto
 
