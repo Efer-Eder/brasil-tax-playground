@@ -9,9 +9,8 @@ import {
   EngineUnavailableError,
 } from "@/lib/tax-engine/errors";
 import {
-  operacaoSchema,
+  envelopeOperacaoSchema,
   type ObservabilidadeResposta,
-  type OperacaoInput,
 } from "@/lib/tax-engine/schemas/regime-regular";
 import type { EngineVersion } from "@/lib/tax-engine/types";
 import { FilaCheiaError, type LimitadorConcorrencia } from "./limites";
@@ -26,7 +25,8 @@ export type SimulacaoResultado =
   | {
       ok: true;
       httpStatus: 200;
-      requisicao: OperacaoInput;
+      /** A operação recebida (JSON do corpo original; o motor recebe o texto sem alteração). */
+      requisicao: Record<string, unknown>;
       resposta: ObservabilidadeResposta;
       warningDadosSimulados: string | null;
       motor: { baseUrl: string; versao: EngineVersion | null };
@@ -95,11 +95,13 @@ export async function simularRegimeRegular(rawBody: string, deps: SimularDeps = 
     return falha(400, { tipo: "json-invalido", mensagem: "O corpo enviado não é um JSON válido." });
   }
 
-  const parsed = operacaoSchema.safeParse(json);
+  // Só o envelope é exigido aqui. Campos são validados pelo motor, que devolve
+  // erro por item na observabilidade (ver paridade com os payloads do upstream).
+  const parsed = envelopeOperacaoSchema.safeParse(json);
   if (!parsed.success) {
     return falha(422, {
       tipo: "validacao",
-      mensagem: "A operação não passou na validação estrutural (antes de chegar ao motor).",
+      mensagem: "O corpo precisa ser um objeto JSON com a lista \"itens\" preenchida.",
       problemas: parsed.error.issues.map((issue) => ({
         caminho: issue.path.length ? issue.path.join(".") : "(raiz)",
         mensagem: issue.message,
@@ -124,7 +126,8 @@ export async function simularRegimeRegular(rawBody: string, deps: SimularDeps = 
 
   try {
     const executar = <T>(tarefa: () => Promise<T>) => (deps.limitador ? deps.limitador.executar(tarefa) : tarefa());
-    const resultado = await executar(() => client.calcularComObservabilidade(parsed.data));
+    // Encaminha o texto original: nada de reescrever números ou a ordem das chaves.
+    const resultado = await executar(() => client.calcularComObservabilidade(rawBody));
     // A versão é informativa: se falhar, o cálculo continua válido.
     const versao = await obterVersao(
       client,
@@ -135,7 +138,7 @@ export async function simularRegimeRegular(rawBody: string, deps: SimularDeps = 
     return {
       ok: true,
       httpStatus: 200,
-      requisicao: parsed.data,
+      requisicao: parsed.data as Record<string, unknown>,
       resposta: resultado.data,
       warningDadosSimulados: resultado.warningDadosSimulados,
       motor: { baseUrl: config.config.baseUrl, versao },

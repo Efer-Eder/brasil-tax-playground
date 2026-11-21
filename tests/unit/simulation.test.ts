@@ -34,20 +34,30 @@ describe("simularRegimeRegular", () => {
     expect(createClient).not.toHaveBeenCalled();
   });
 
-  it("reports structural validation problems with paths (422)", async () => {
+  it.each([
+    ["an array", "[]"],
+    ["an object without itens", JSON.stringify({ id: "x" })],
+    ["empty itens", JSON.stringify({ ...OPERACAO, itens: [] })],
+    ["itens that is not a list", JSON.stringify({ ...OPERACAO, itens: {} })],
+  ])("rejects %s with 422 before the engine", async (_label, corpo) => {
     const createClient = vi.fn();
-    const r = await simularRegimeRegular(JSON.stringify({ ...OPERACAO, itens: [{ numero: 1, cst: "0", cClassTrib: "x" }] }), {
-      env: ENV,
-      createClient,
-    });
-    expect(r.ok).toBe(false);
-    if (!r.ok && r.erro.tipo === "validacao") {
-      expect(r.httpStatus).toBe(422);
-      expect(r.erro.problemas.map((p) => p.caminho)).toEqual(expect.arrayContaining(["itens.0.cst", "itens.0.cClassTrib"]));
-    } else {
-      throw new Error("expected a validation error");
-    }
+    const r = await simularRegimeRegular(corpo, { env: ENV, createClient });
+    expect(r).toMatchObject({ ok: false, httpStatus: 422, erro: { tipo: "validacao" } });
     expect(createClient).not.toHaveBeenCalled();
+  });
+
+  it("forwards field-level problems to the engine, which reports them per item", async () => {
+    const a = adapter();
+    const corpo = JSON.stringify({ ...OPERACAO, itens: [{ numero: 1, cst: "0", cClassTrib: "x" }] });
+    await simularRegimeRegular(corpo, { env: ENV, createClient: () => a });
+    expect(a.calcularComObservabilidade).toHaveBeenCalledTimes(1);
+  });
+
+  it("sends the original text to the engine without rewriting numbers or key order", async () => {
+    const a = adapter();
+    const corpo = '{"versao":"1","id":"x","municipio":1,"itens":[{"numero":1,"cst":"000","cClassTrib":"000000","baseCalculo":12.0}]}';
+    await simularRegimeRegular(corpo, { env: ENV, createClient: () => a });
+    expect(a.calcularComObservabilidade).toHaveBeenCalledWith(corpo);
   });
 
   it("returns 503 nao-configurado when the engine URL is missing", async () => {

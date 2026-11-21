@@ -1,22 +1,30 @@
 import { z } from "zod";
 
 /**
- * Schemas de ENTRADA do endpoint `POST /calculadora/regime-geral` (e da
- * variante `/calculadora/observabilidade/regime-geral`) do motor oficial.
+ * Schemas do endpoint `POST /calculadora/observabilidade/regime-geral` do
+ * motor oficial (calculadora-rtc-regime-regular, tag 1.7.2, commit
+ * f1eebd7ce3157423b1a6aaca7dc1d6c3395452c4).
  *
- * Fonte: classes `OperacaoInput`, `ItemOperacaoInput`, `ImpostoSeletivoInput`,
- * `AliquotasNominaisInput` e `AliquotasNominaisImpostoSeletivo` em
- * https://github.com/ReceitaFederal/calculadora-rtc-regime-regular
- * (tag 1.7.2, commit f1eebd7ce3157423b1a6aaca7dc1d6c3395452c4).
+ * Há dois níveis, de propósito:
  *
- * Estes schemas reproduzem APENAS as restrições estruturais declaradas por
- * Bean Validation no upstream (obrigatoriedade, tamanho, dígitos), para dar
- * retorno rápido no formulário. Eles não contêm nenhuma regra tributária:
- * regras condicionais (ex.: `aliquotasNominais` obrigatório a partir de 2027,
- * vínculo NCM × cClassTrib) são validadas pelo motor, que é a fonte da verdade.
- * Grupos ainda não cobertos (`tributacaoRegular`, `gComponentesBC`,
- * `gCompraGov`) são aceitos e repassados sem validação local.
+ * 1. `envelopeOperacaoSchema` é o que o BFF exige antes de encaminhar: um
+ *    objeto JSON com `itens` não vazio. Todo o resto é validado pelo MOTOR,
+ *    que é a fonte da verdade. O endpoint de observabilidade devolve erros de
+ *    campo por item (HTTP 200 com `estadoItem`), e barrar isso antes quebraria
+ *    a paridade com o motor (ver tests/contract/paridade-upstream.test.ts).
+ *    O corpo é encaminhado como texto original, sem ser reescrito.
+ *
+ * 2. `operacaoSchema` espelha as restrições estruturais do contrato
+ *    (Bean Validation das classes de entrada e o OpenAPI do motor). Ele é
+ *    usado na interface, como apoio antes de enviar, e no formulário guiado.
+ *    Não contém regra tributária. Campos opcionais aceitam `null`, como o
+ *    Jackson do motor aceita.
  */
+
+/** Exigido pelo BFF antes de encaminhar ao motor. */
+export const envelopeOperacaoSchema = z.looseObject({
+  itens: z.array(z.unknown()).min(1, "Informe ao menos um item"),
+});
 
 /** Equivalente a `@Digits(integer, fraction)` + `@PositiveOrZero`. */
 function decimal(integer: number, fraction: number) {
@@ -37,50 +45,94 @@ const digitos = (tamanho: number) =>
     .length(tamanho, `Deve ter ${tamanho} dígitos`);
 
 const percentual = decimal(3, 4).max(100, "Máximo de 100");
+const opcional = <T extends z.ZodType>(s: T) => s.nullish();
 
-export const aliquotasNominaisImpostoSeletivoSchema = z.object({
-  adValorem: percentual.optional(),
-  adRem: z.number().finite().nonnegative().optional(),
+export const aliquotasNominaisImpostoSeletivoSchema = z.looseObject({
+  adValorem: opcional(percentual),
+  adRem: opcional(z.number().finite().nonnegative()),
 });
 
-export const aliquotasNominaisSchema = z.object({
-  cbs: percentual.optional(),
-  ibsEstadual: percentual.optional(),
-  ibsMunicipal: percentual.optional(),
-  impostoSeletivo: aliquotasNominaisImpostoSeletivoSchema.optional(),
+export const aliquotasNominaisSchema = z.looseObject({
+  cbs: opcional(percentual),
+  ibsEstadual: opcional(percentual),
+  ibsMunicipal: opcional(percentual),
+  impostoSeletivo: opcional(aliquotasNominaisImpostoSeletivoSchema),
 });
 
-export const impostoSeletivoSchema = z.object({
+export const impostoSeletivoSchema = z.looseObject({
   cst: digitos(3),
   cClassTrib: digitos(6),
   baseCalculo: decimal(13, 2),
-  quantidade: decimal(11, 4).optional(),
-  unidade: z.string().optional(),
-  impostoInformado: decimal(13, 2).optional(),
+  quantidade: opcional(decimal(11, 4)),
+  unidade: opcional(z.string()),
+  impostoInformado: opcional(decimal(13, 2)),
+});
+
+export const tributacaoRegularSchema = z.looseObject({
+  cst: digitos(3),
+  cClassTrib: digitos(6),
+});
+
+/** Componentes da base de cálculo (ComponentesBaseCalculoInput), todos opcionais e >= 0. */
+export const COMPONENTES_BC = [
+  "vProd",
+  "vFrete",
+  "vSeg",
+  "vOutro",
+  "vII",
+  "vIS",
+  "vDesc",
+  "vPIS",
+  "vCOFINS",
+  "vICMS",
+  "vICMSUFDest",
+  "vFCP",
+  "vFCPUFDest",
+  "vICMSMono",
+  "vISSQN",
+] as const;
+
+export const componentesBaseCalculoSchema = z.looseObject(
+  Object.fromEntries(COMPONENTES_BC.map((c) => [c, opcional(decimal(13, 2))])) as Record<
+    (typeof COMPONENTES_BC)[number],
+    z.ZodOptional<z.ZodNullable<ReturnType<typeof decimal>>>
+  >,
+);
+
+export const compraGovernamentalSchema = z.looseObject({
+  tpEnteGov: z.number().int(),
+  tpOperGov: opcional(z.number().int()),
 });
 
 export const itemOperacaoSchema = z.looseObject({
   numero: z.number().int().min(1).max(9_999_999),
-  ncm: z.string().optional(),
-  nbs: z.string().optional(),
+  ncm: opcional(z.string()),
+  nbs: opcional(z.string()),
   cst: digitos(3),
   cClassTrib: digitos(6),
-  baseCalculo: decimal(13, 2).optional(),
+  baseCalculo: opcional(decimal(13, 2)),
   // Upstream: @Digits(11, 4) sem @PositiveOrZero.
-  quantidade: z.number().finite().optional(),
-  unidade: z.string().optional(),
-  impostoSeletivo: impostoSeletivoSchema.optional(),
-  aliquotasNominais: aliquotasNominaisSchema.optional(),
+  quantidade: opcional(z.number().finite()),
+  unidade: opcional(z.string()),
+  impostoSeletivo: opcional(impostoSeletivoSchema),
+  tributacaoRegular: opcional(tributacaoRegularSchema),
+  gComponentesBC: opcional(componentesBaseCalculoSchema),
+  aliquotasNominais: opcional(aliquotasNominaisSchema),
 });
+
+const dataHora = z.iso.datetime({ offset: true, error: "Use data e hora ISO 8601, ex.: 2027-03-10T10:00:00-03:00" });
 
 export const operacaoSchema = z.looseObject({
   id: z.string().min(1, "Obrigatório"),
   versao: z.string().min(1, "Obrigatório"),
-  /** ISO 8601 com offset, ex.: 2027-03-10T10:00:00-03:00 */
-  dhFatoGerador: z.iso.datetime({ offset: true }),
+  /** Opcional no contrato; o motor exige ela ou `dataHoraEmissao` (obsoleto). */
+  dhFatoGerador: opcional(dataHora),
+  /** Obsoleto no motor, ainda aceito. */
+  dataHoraEmissao: opcional(dataHora),
   municipio: z.number().int().min(0).max(9_999_999),
-  uf: z.string().length(2, "Use a sigla da UF com 2 letras").optional(),
-  tpDoc: z.number().int().min(1).max(999).optional(),
+  uf: opcional(z.string().length(2, "Use a sigla da UF com 2 letras")),
+  tpDoc: opcional(z.number().int().min(1).max(999)),
+  gCompraGov: opcional(compraGovernamentalSchema),
   itens: z.array(itemOperacaoSchema).min(1, "Informe ao menos um item"),
 });
 
@@ -110,8 +162,8 @@ export const versaoSchema = z.looseObject({
 });
 
 /**
- * Validação mínima da resposta da observabilidade: só o envelope. O conteúdo
- * de cada objeto é preservado integralmente para exibição/inspeção.
+ * Validação mínima da resposta da observabilidade: só o envelope. O corpo é
+ * devolvido como veio do motor (o resultado do parse é descartado).
  */
 export const observabilidadeRespostaSchema = z.looseObject({
   objetos: z.array(

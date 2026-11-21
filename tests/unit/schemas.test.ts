@@ -31,9 +31,22 @@ describe("operacaoSchema (structural mirror of upstream OperacaoInput)", () => {
   });
 
   it("keeps fields it does not model (passthrough to the engine)", () => {
-    const input = { ...operacaoFicticia(), gCompraGov: { tpEnteGov: "1" } };
+    const input = { ...operacaoFicticia(), campoFuturo: 1, gCompraGov: { tpEnteGov: 1, extra: true } };
     const parsed = operacaoSchema.parse(input);
-    expect(parsed).toHaveProperty("gCompraGov");
+    expect(parsed).toHaveProperty("campoFuturo", 1);
+    expect(parsed.gCompraGov).toHaveProperty("extra", true);
+  });
+
+  it("accepts null in optional fields and the deprecated dataHoraEmissao, like the engine", () => {
+    const base = operacaoFicticia();
+    const { dhFatoGerador: _omitida, ...semData } = base;
+    void _omitida;
+    const input = {
+      ...semData,
+      dataHoraEmissao: "2026-01-01T09:50:05-03:00",
+      itens: [{ ...base.itens[0], nbs: null, unidade: null }],
+    };
+    expect(operacaoSchema.safeParse(input).success).toBe(true);
   });
 
   it("requires at least one item", () => {

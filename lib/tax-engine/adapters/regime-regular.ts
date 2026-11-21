@@ -41,8 +41,12 @@ export interface EngineCallResult<T> {
  */
 export interface RegimeRegularAdapter {
   getVersao(signal?: AbortSignal): Promise<EngineVersion>;
+  /**
+   * Envia a operação ao motor. Uma string é enviada exatamente como está
+   * (sem reescrever números nem a ordem das chaves); um objeto é serializado.
+   */
   calcularComObservabilidade(
-    operacao: OperacaoInput,
+    operacao: OperacaoInput | string,
     signal?: AbortSignal,
   ): Promise<EngineCallResult<ObservabilidadeResposta>>;
 }
@@ -119,7 +123,8 @@ export function createRegimeRegularHttpClient(
     }
 
     return {
-      data: parsed.data,
+      // O schema só confere o envelope; o corpo segue exatamente como o motor mandou.
+      data: body as z.infer<S>,
       status: response.status,
       warningDadosSimulados: response.headers.get(WARNING_HEADER),
     };
@@ -137,7 +142,7 @@ export function createRegimeRegularHttpClient(
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(operacao),
+          body: typeof operacao === "string" ? operacao : JSON.stringify(operacao),
         },
         signal,
       );

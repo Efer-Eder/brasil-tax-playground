@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import type { ObservabilidadeResposta, OperacaoInput } from "@/lib/tax-engine/schemas/regime-regular";
+import type { ObservabilidadeResposta } from "@/lib/tax-engine/schemas/regime-regular";
 import type { EngineVersion } from "@/lib/tax-engine/types";
 
 /**
@@ -15,7 +15,7 @@ export interface FixtureRegimeRegular {
     endpoint: string;
     versao: EngineVersion;
   };
-  requisicao: OperacaoInput;
+  requisicao: Record<string, unknown>;
   status: number;
   warningDadosSimulados: string | null;
   resposta: ObservabilidadeResposta;
