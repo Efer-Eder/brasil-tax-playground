@@ -1,5 +1,6 @@
 import { connection } from "next/server";
 import { CORS_HEADERS } from "@/lib/cors";
+import { statusPublico } from "@/lib/http/publico";
 import { checkRegimeRegularStatus } from "@/lib/tax-engine";
 
 /**
@@ -10,7 +11,7 @@ import { checkRegimeRegularStatus } from "@/lib/tax-engine";
 export async function GET() {
   await connection();
   const status = await checkRegimeRegularStatus();
-  return Response.json(status, { headers: { ...CORS_HEADERS, "Cache-Control": "no-store" } });
+  return Response.json(statusPublico(status), { headers: { ...CORS_HEADERS, "Cache-Control": "no-store" } });
 }
 
 export function OPTIONS() {
