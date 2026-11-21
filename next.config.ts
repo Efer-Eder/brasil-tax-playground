@@ -11,6 +11,20 @@ const nextConfig: NextConfig = {
   env: { NEXT_PUBLIC_BASE_PATH: basePath },
   output: "standalone",
   poweredByHeader: false,
+  // Cabeçalhos de segurança básicos para todas as rotas.
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
+        ],
+      },
+    ];
+  },
   // Sem next/image no app; desligar o otimizador evita depender do sharp nativo.
   images: { unoptimized: true },
   cacheComponents: true,
