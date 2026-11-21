@@ -1,0 +1,390 @@
+{
+  "origem": "GET /api-docs do motor calculadora-rtc-regime-regular (OpenAPI 3.1.0)",
+  "motor": {
+    "versaoApp": "1.7.2",
+    "versaoDb": "V0073",
+    "dataVersaoDb": "2026-11-09"
+  },
+  "schemas": {
+    "OperacaoInput": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Identificador do ROC",
+          "example": "6194602ea71cbf9431c236de4409d920"
+        },
+        "versao": {
+          "type": "string",
+          "description": "Versão do ROC",
+          "example": "0.0.1"
+        },
+        "dhFatoGerador": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Data e hora do fato gerador no formato UTC",
+          "example": "2026-01-01T09:50:05-03:00"
+        },
+        "dataHoraEmissao": {
+          "type": "string",
+          "format": "date-time",
+          "deprecated": true,
+          "description": "<u><<<<b>ATENÇÃO</b>>>><p>ESTE CAMPO SERÁ REMOVIDO EM FUTURO PRÓXIMO</p><p>Informar <b>dhFatoGerador</b></u></p><p>Data e hora de emissão do documento no formato UTC</p>",
+          "example": "2026-01-01T09:50:05-03:00"
+        },
+        "municipio": {
+          "type": "integer",
+          "format": "int64",
+          "description": "Código do Município (tabela IBGE)",
+          "example": 4314902,
+          "maximum": 9999999,
+          "minimum": 0
+        },
+        "uf": {
+          "type": "string",
+          "description": "Sigla da UF",
+          "example": "RS",
+          "maxLength": 2,
+          "minLength": 2
+        },
+        "tpDoc": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Tipo do documento fiscal eletrônico que origina a operação (código numérico do modelo, ex.: 55 = NF-e, 65 = NFC-e). Opcional: quando informado, o tipo deve existir e estar vigente na data do fato gerador, a classificação tributária dos itens deve possuir vínculo com o tipo de documento e a exigência de NCM/NBS passa a ser dirigida pela nomenclatura aplicável ao documento",
+          "example": 55,
+          "maximum": 999,
+          "minimum": 1
+        },
+        "gCompraGov": {
+          "$ref": "#/components/schemas/CompraGovernamentalInput",
+          "description": "Grupo de Compra Governamental"
+        },
+        "itens": {
+          "type": "array",
+          "description": "Itens da Operação",
+          "items": {
+            "$ref": "#/components/schemas/ItemOperacaoInput"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "id",
+        "itens",
+        "municipio",
+        "versao"
+      ]
+    },
+    "ItemOperacaoInput": {
+      "type": "object",
+      "properties": {
+        "numero": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Número do Item",
+          "example": 1,
+          "maximum": 9999999,
+          "minimum": 1
+        },
+        "ncm": {
+          "type": "string",
+          "description": "Código NCM",
+          "example": "24021000"
+        },
+        "nbs": {
+          "type": "string",
+          "description": "Código NBS",
+          "example": "109052100"
+        },
+        "cst": {
+          "type": "string",
+          "description": "Código de situação tributária",
+          "example": "000",
+          "maxLength": 3,
+          "minLength": 3,
+          "pattern": "\\d+"
+        },
+        "cClassTrib": {
+          "type": "string",
+          "description": "Código de classificação tributária",
+          "example": "000001",
+          "maxLength": 6,
+          "minLength": 6,
+          "pattern": "\\d+"
+        },
+        "baseCalculo": {
+          "type": "number",
+          "description": "Base de cálculo de CBS e IBS. Obrigatória quando impostoSeletivo e gComponentesBC não são informados; opcional com impostoSeletivo (derivada) ou com gComponentesBC (calculada automaticamente)",
+          "example": 200,
+          "minimum": 0
+        },
+        "quantidade": {
+          "type": "number",
+          "description": "Quantidade",
+          "example": 1
+        },
+        "unidade": {
+          "type": "string",
+          "description": "Unidade de medida",
+          "example": "LT"
+        },
+        "impostoSeletivo": {
+          "$ref": "#/components/schemas/ImpostoSeletivoInput",
+          "description": "Informações do Imposto Seletivo"
+        },
+        "tributacaoRegular": {
+          "$ref": "#/components/schemas/TributacaoRegularInput",
+          "description": "Informações sobre tributação regular"
+        },
+        "gComponentesBC": {
+          "$ref": "#/components/schemas/ComponentesBaseCalculoInput",
+          "description": "Grupo de componentes para cálculo/validação da Base de Cálculo. Quando informado, permite o cálculo automático da BC ou a validação cruzada com a BC declarada"
+        },
+        "aliquotasNominais": {
+          "$ref": "#/components/schemas/AliquotasNominaisInput",
+          "description": "Alíquotas nominais aplicáveis à operação. Obrigatório para operações a partir de 01/01/2027 e proibido antes dessa data"
+        }
+      },
+      "required": [
+        "cClassTrib",
+        "cst",
+        "numero"
+      ]
+    },
+    "ImpostoSeletivoInput": {
+      "type": "object",
+      "properties": {
+        "cst": {
+          "type": "string",
+          "description": "Código da situação tributária",
+          "example": "000",
+          "maxLength": 3,
+          "minLength": 3,
+          "pattern": "\\d+"
+        },
+        "cClassTrib": {
+          "type": "string",
+          "description": "Código da classificação tributária",
+          "example": "000000",
+          "maxLength": 6,
+          "minLength": 6,
+          "pattern": "\\d+"
+        },
+        "baseCalculo": {
+          "type": "number",
+          "description": "Base de cálculo do Imposto Seletivo. Obrigatória quando o grupo do Imposto Seletivo é informado; serve de referência para a base de cálculo de CBS e IBS",
+          "example": 188,
+          "minimum": 0
+        },
+        "quantidade": {
+          "type": "number",
+          "description": "Quantidade",
+          "example": 1,
+          "minimum": 0
+        },
+        "unidade": {
+          "type": "string",
+          "description": "Unidade de medida",
+          "example": "LT"
+        },
+        "impostoInformado": {
+          "type": "number",
+          "description": "Imposto Seletivo informado pelo contribuinte. Opcional; quando presente junto com a base de cálculo de CBS e IBS, deve satisfazer baseCalculo (CBS/IBS) = baseCalculo (IS) + impostoInformado. Quando ausente, é tratado como zero",
+          "example": 12,
+          "minimum": 0
+        }
+      },
+      "required": [
+        "baseCalculo",
+        "cClassTrib",
+        "cst"
+      ]
+    },
+    "TributacaoRegularInput": {
+      "type": "object",
+      "properties": {
+        "cst": {
+          "type": "string",
+          "description": "Código da situação tributária",
+          "example": "000",
+          "maxLength": 3,
+          "minLength": 3,
+          "pattern": "\\d+"
+        },
+        "cClassTrib": {
+          "type": "string",
+          "description": "Código da classificação tributária",
+          "example": "000000",
+          "maxLength": 6,
+          "minLength": 6,
+          "pattern": "\\d+"
+        }
+      },
+      "required": [
+        "cClassTrib",
+        "cst"
+      ]
+    },
+    "ComponentesBaseCalculoInput": {
+      "type": "object",
+      "properties": {
+        "vProd": {
+          "type": "number",
+          "description": "Valor dos produtos/serviços",
+          "example": 1000,
+          "minimum": 0
+        },
+        "vFrete": {
+          "type": "number",
+          "description": "Valor do frete",
+          "example": 50,
+          "minimum": 0
+        },
+        "vSeg": {
+          "type": "number",
+          "description": "Valor do seguro",
+          "example": 20,
+          "minimum": 0
+        },
+        "vOutro": {
+          "type": "number",
+          "description": "Outras despesas acessórias",
+          "example": 10,
+          "minimum": 0
+        },
+        "vII": {
+          "type": "number",
+          "description": "Imposto de importação",
+          "example": 150,
+          "minimum": 0
+        },
+        "vIS": {
+          "type": "number",
+          "description": "Imposto Seletivo",
+          "example": 30,
+          "minimum": 0
+        },
+        "vDesc": {
+          "type": "number",
+          "description": "Desconto incondicional",
+          "example": 50,
+          "minimum": 0
+        },
+        "vPIS": {
+          "type": "number",
+          "description": "PIS (vigente 2026)",
+          "example": 9.25,
+          "minimum": 0
+        },
+        "vCOFINS": {
+          "type": "number",
+          "description": "COFINS (vigente 2026)",
+          "example": 46.25,
+          "minimum": 0
+        },
+        "vICMS": {
+          "type": "number",
+          "description": "ICMS (vigente 2026-2032)",
+          "example": 180,
+          "minimum": 0
+        },
+        "vICMSUFDest": {
+          "type": "number",
+          "description": "ICMS UF Destino (vigente 2026-2032)",
+          "example": 20,
+          "minimum": 0
+        },
+        "vFCP": {
+          "type": "number",
+          "description": "FCP (vigente 2026-2032)",
+          "example": 10,
+          "minimum": 0
+        },
+        "vFCPUFDest": {
+          "type": "number",
+          "description": "FCP UF Destino (vigente 2026-2032)",
+          "example": 5,
+          "minimum": 0
+        },
+        "vICMSMono": {
+          "type": "number",
+          "description": "ICMS Monofásico (vigente 2026-2032)",
+          "example": 100,
+          "minimum": 0
+        },
+        "vISSQN": {
+          "type": "number",
+          "description": "ISSQN (vigente 2026-2032, apenas serviço)",
+          "example": 30,
+          "minimum": 0
+        }
+      }
+    },
+    "CompraGovernamentalInput": {
+      "type": "object",
+      "properties": {
+        "tpEnteGov": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Tipo de ente governamental.<p>\nValores:<p>\n<ul>\n<li>1 = União\n<li>2 = Estado\n<li>3 = Distrito Federal\n<li>4 = Município\n<li>5 = Consórcio Público\n<li>6 = Comitê Gestor do IBS\n</ul>\n"
+        },
+        "tpOperGov": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Tipo de operação com o ente governamental.<p>\nValores:<p>\n<ul>\n<li>1 = Fornecimento com pagamento posterior\n<li>2 = Recebimento do pagamento com fornecimento já realizado\n<li>3 = Fornecimento com pagamento já realizado\n<li>4 = Recebimento do pagamento com fornecimento posterior\n<li>5 = Fornecimento e recebimento do pagamento concomitantes\n</ul>\n"
+        }
+      },
+      "required": [
+        "tpEnteGov"
+      ]
+    },
+    "AliquotasNominaisInput": {
+      "type": "object",
+      "properties": {
+        "cbs": {
+          "type": "number",
+          "description": "Alíquota nominal CBS (%)",
+          "example": 8.8,
+          "maximum": 100,
+          "minimum": 0
+        },
+        "ibsEstadual": {
+          "type": "number",
+          "description": "Alíquota nominal IBS estadual (%)",
+          "example": 8.85,
+          "maximum": 100,
+          "minimum": 0
+        },
+        "ibsMunicipal": {
+          "type": "number",
+          "description": "Alíquota nominal IBS municipal (%)",
+          "example": 8.85,
+          "maximum": 100,
+          "minimum": 0
+        },
+        "impostoSeletivo": {
+          "$ref": "#/components/schemas/AliquotasNominaisImpostoSeletivo",
+          "description": "Alíquotas nominais do Imposto Seletivo"
+        }
+      }
+    },
+    "AliquotasNominaisImpostoSeletivo": {
+      "type": "object",
+      "properties": {
+        "adValorem": {
+          "type": "number",
+          "description": "Alíquota ad valorem do Imposto Seletivo (%)",
+          "example": 10,
+          "maximum": 100,
+          "minimum": 0
+        },
+        "adRem": {
+          "type": "number",
+          "description": "Alíquota ad rem do Imposto Seletivo",
+          "example": 0.5,
+          "minimum": 0
+        }
+      }
+    }
+  }
+}
