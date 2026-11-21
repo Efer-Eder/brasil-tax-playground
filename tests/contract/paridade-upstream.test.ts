@@ -2,6 +2,7 @@ import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "n
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 import { simularRegimeRegular } from "@/lib/simulation/regime-regular";
+import { iguais } from "./normalizar";
 
 /**
  * Paridade com os payloads de teste do próprio upstream
@@ -43,30 +44,6 @@ interface Caso {
   statusApp: number;
   detalhe?: string;
 }
-
-/**
- * Normalização usada SÓ para comparar (o app exibe a resposta como veio):
- * - `timestamp` do ProblemDetail muda a cada chamada;
- * - o próprio motor devolve listas de erros de validação em ordem não
- *   determinística (duas chamadas diretas iguais podem vir em ordens diferentes).
- */
-function normalizar(valor: unknown): unknown {
-  if (Array.isArray(valor)) {
-    const itens = valor.map(normalizar);
-    const ehListaDeErros = itens.every((i) => i && typeof i === "object" && ("pointer" in i || "code" in i));
-    return ehListaDeErros ? itens.map((i) => JSON.stringify(i)).sort().map((i) => JSON.parse(i)) : itens;
-  }
-  if (valor && typeof valor === "object") {
-    return Object.fromEntries(
-      Object.entries(valor)
-        .filter(([k]) => k !== "timestamp")
-        .map(([k, v]) => [k, normalizar(v)]),
-    );
-  }
-  return valor;
-}
-
-const iguais = (a: unknown, b: unknown) => JSON.stringify(normalizar(a)) === JSON.stringify(normalizar(b));
 
 function listar(raiz: string): string[] {
   const out: string[] = [];

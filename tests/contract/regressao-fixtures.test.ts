@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { simularRegimeRegular } from "@/lib/simulation/regime-regular";
 import { carregarFixtures } from "../fixtures/regime-regular";
+import { normalizar } from "./normalizar";
 
 /**
  * Regressão contra o motor real: reenvia a requisição de cada fixture e exige
@@ -19,7 +20,8 @@ describe.skipIf(!url || regravando)("regressão: motor real × fixtures gravadas
       if (!resultado.ok) throw new Error(JSON.stringify(resultado.erro));
       expect(resultado.motor.versao).toEqual(fixture.motor.versao);
       expect(resultado.warningDadosSimulados).toBe(fixture.warningDadosSimulados);
-      expect(resultado.resposta).toEqual(fixture.resposta);
+      // Ordem dos erros de validação do motor não é determinística (ver normalizar.ts).
+      expect(normalizar(resultado.resposta)).toEqual(normalizar(fixture.resposta));
     });
   }
 });
