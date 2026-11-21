@@ -4,8 +4,11 @@
 - API pública: `https://efer.online/api/brasil-tax-playground/<endpoint>`
   - `GET  /api/brasil-tax-playground/engine/status`
   - `POST /api/brasil-tax-playground/simular/regime-regular` (corpo = `OperacaoInput` do motor, JSON)
+  - `GET  /api/brasil-tax-playground/engine/{regime-regular|simples-nacional|danfse}/status`
+  - `POST /api/brasil-tax-playground/simular/simples-nacional` (corpo = `OperacaoSimplesNaoAssistidaInput`, JSON)
+  - `POST /api/brasil-tax-playground/danfse` (corpo = XML da NFS-e; resposta = PDF)
 
-A instância roda o **motor oficial** `calculadora-rtc-regime-regular` 1.7.2 (`32df719`), sem modificações, ao lado do app. Ela continua **independente e não oficial**: os números vêm do motor, nada é armazenado e não há cadastro, cookies ou telemetria.
+A instância roda os **serviços oficiais** `calculadora-rtc-regime-regular` 1.7.2 (`32df719`), `calculadora-rtc-simples-nacional` 1.0.2 (`f90b652`) e `calculadora-rtc-gerador-danfse` 1.0.0 (`8d79e6b`), sem modificações, ao lado do app. Ela continua **independente e não oficial**: os números vêm do motor, nada é armazenado e não há cadastro, cookies ou telemetria.
 
 ## Arquitetura
 
@@ -17,9 +20,12 @@ Cloudflare ──HTTPS──> Nginx (VPS)
 Docker Compose "brasil-tax-playground"
   app        (Next.js standalone, 256 MB, 0,75 CPU)  redes: interna + publica
   rtc-engine (motor oficial, JVM, 640 MB, 1,0 CPU)   rede:  interna (internal: true, sem porta publicada)
+  simples-engine (Simples Nacional, JVM, 576 MB, 0,75 CPU)  rede: interna
+  danfse     (gerador Go, 128 MB, 0,5 CPU, nobody, só leitura)  rede: interna
 ```
 
-- O motor não tem porta publicada nem saída para a internet. Só o app fala com ele.
+- Os motores não têm porta publicada nem saída para a internet. Só o app fala com eles.
+- A imagem do DANFSe é construída fora da VPS com o Dockerfile do upstream e enviada como `.tar` (`docker load` no `remoto.sh`): evita baixar a imagem de build do Go (~900 MB) num servidor de 2 vCPU.
 - Arquivos: `deploy/docker-compose.yml`, `deploy/engine/Dockerfile`, `deploy/app/Dockerfile`, `deploy/nginx/*.conf`, `deploy/deploy.ps1`, `deploy/remoto.sh`.
 - Na VPS: `/opt/projects/brasil-tax-playground/releases/<UTC>` e `current` → release ativa (5 mantidas). Nginx: `/etc/nginx/conf.d/brasil-tax-playground.conf` (zonas) e `/etc/nginx/snippets/brasil-tax-playground.conf` (rotas), incluído no server `efer.online` logo após a linha `server_name`. Backups em `/var/backups/nginx/`.
 
@@ -83,6 +89,23 @@ VPS: 2 vCPU, ~3,9 GB de RAM, ~1,9 GB disponíveis antes do deploy, compartilhada
 | RAM do app | `mem_limit: 256m`, `--max-old-space-size=160` | Next standalone usa ~100–150 MB. |
 | Total novo | ≤ 896 MB de teto (uso real esperado ~550 MB) | Cabe nos ~1,9 GB disponíveis, sobrando > 1 GB. |
 
+### Simples Nacional e DANFSe (2026-11-21)
+
+Medição local (máquina de desenvolvimento, sem limite de núcleos), só para dimensionar; as medições na VPS entram depois do deploy:
+
+| Serviço | Vazão | Latência | RAM |
+|---|---|---|---|
+| Simples Nacional (NFS-e de 1 item, 3 em paralelo) | ~350 req/s | p50 7 ms, p95 12 ms | ~450 MB com heap de 256 MB |
+| DANFSe (XML de exemplo, 2 em paralelo) | ~8,6 PDFs/s | p50 226 ms, p95 261 ms | 20 a 40 MB |
+
+Decisões:
+
+- Simples: `mem_limit: 576m` (pico medido + ~25%), `cpus: 0.75`, a mesma fila do app (3 em paralelo, 32 na fila), fila própria (é outro processo).
+- DANFSe: gerar PDF pesa em CPU, então no máximo **2 ao mesmo tempo e fila de 8**, `cpus: 0.5`, timeout de 10 s, XML de até 500 KB (o mesmo `client_max_body_size` da API no Nginx; o upstream aceitaria 5 MiB). `XML_MAX_SIZE_BYTES=1048576` no container.
+- Soma dos tetos de CPU do Compose: 1,0 + 0,75 + 0,5 + 0,75 = 3,0 > 2 vCPU. O teto real vem antes: as filas do app limitam quantas chamadas chegam aos motores, e o Nginx limita a instância a 30 req/s.
+- RAM nova: ~450 MB (Simples) + ~40 MB (DANFSe). Antes do deploy havia ~1,75 GB disponíveis na VPS (`free -m` em 2026-11-21).
+- Rotas novas usam as mesmas zonas de rate limit da API; o Nginx não muda.
+
 ### Limites do app (fila antes do motor)
 
 | Variável | Valor | Conta |
@@ -140,10 +163,12 @@ Commits, estrelas, issues, PRs e CI aparecem sozinhos em até 15 min. Deploy só
 Pré-requisitos locais: Node 24, Java 25 com `JAVA_HOME`, acesso SSH à VPS e um clone do motor na tag desejada, com `flyway:migrate` e `clean package` já executados (ver [upstream-integration.md](upstream-integration.md)).
 
 ```powershell
-.\deploy\deploy.ps1 -Vps root@<ip-da-vps> -Key <caminho-da-chave> -EngineDir C:\caminho\calculadora-rtc-regime-regular -Nginx
+.\deploy\deploy.ps1 -Vps root@<ip-da-vps> -Key <caminho-da-chave> -EngineDir C:\caminho\calculadora-rtc-regime-regular -SimplesDir C:\caminho\calculadora-rtc-simples-nacional -DanfseImage C:\caminho\danfse-1.0.0.tar -Nginx
 ```
 
-Sem `-Nginx`, só app e motor são atualizados. O script gera o build standalone com `NEXT_BASE_PATH=/projeto/brasil-tax-playground`, empacota tudo, envia, roda `docker compose build/up`, espera o status `disponivel` e, com `-Nginx`, instala as configs com backup e `nginx -t` (restaura sozinho se falhar).
+A imagem do DANFSe sai do clone do gerador na tag 1.0.0: `docker build -t brasil-tax-playground-danfse:1.0.0 .` e `docker save brasil-tax-playground-danfse:1.0.0 -o danfse-1.0.0.tar`.
+
+Sem `-Nginx`, só app e motor são atualizados. O script gera o build standalone com `NEXT_BASE_PATH=/projeto/brasil-tax-playground`, empacota tudo, envia, roda `docker compose build/up`, espera o status `disponivel` dos três serviços e, com `-Nginx`, instala as configs com backup e `nginx -t` (restaura sozinho se falhar).
 
 Ao trocar a versão do motor: regravar as fixtures (`npm run fixtures:gravar`) e atualizar `upstreamReferencia` e a tag da imagem no Compose.
 

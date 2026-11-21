@@ -35,6 +35,8 @@ Regras que valem para todo código, documentação e exemplo deste repositório.
 - A ajuda dos campos e os rótulos dos resultados são os textos que o motor publica no OpenAPI.
 - O BFF de dados abertos só aceita uma lista fechada de consultas, com parâmetros validados; não é um proxy genérico para o motor.
 - O histórico de simulações fica só no `localStorage` do navegador (até 20 registros), com aviso na tela para não usar dados reais de clientes.
+- Simples Nacional: as alíquotas efetivas do contribuinte (`aliquotasEfetivas`) são informadas por quem simula; o formulário não sugere valor. Os exemplos usam só as alíquotas publicadas no OpenAPI do próprio motor 1.0.2, e um teste garante isso.
+- DANFSe: o XML vai ao gerador oficial como chegou (bytes, sem recodificar) e o PDF volta como ele gerou. O app não guarda XML nem PDF. O exemplo é uma NFS-e fictícia (CNPJ e CPF zerados, homologação, sem tributos), e a tela pede para não usar notas reais de clientes na instância pública.
 
 ## Instância pública (efer.online)
 

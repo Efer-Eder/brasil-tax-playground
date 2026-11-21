@@ -23,7 +23,7 @@
 </div>
 
 > [!IMPORTANT]
-> Independent, unofficial tool. It does not replace accounting or tax advice and has no affiliation with Brazil's Federal Revenue Service (Receita Federal). **Work in progress**. The guided form and local history are live on the public instance. The UI is in Brazilian Portuguese.
+> Independent, unofficial tool. It does not replace accounting or tax advice and has no affiliation with Brazil's Federal Revenue Service (Receita Federal). **Work in progress**. Simples Nacional and the DANFSe generator are in the code; the public instance gets this version on the next deploy. The UI is in Brazilian Portuguese.
 
 ## Why this exists
 
@@ -39,15 +39,17 @@ The one rule behind everything: **no tax rate, rule or calculation is written he
 
 | | |
 |---|---|
-| **Guided mode** | Five steps built from the contract the engine publishes: state and city, CST and cClassTrib from the table in force on the date, and NCM or NBS looked up in the engine itself. No tax value is prefilled. |
-| **Developer mode** | JSON editor in the engine's `OperacaoInput` shape, fictitious examples, file import, validate, format and copy. Both modes use the same path to the engine. |
+| **Pick the official service** | Regular regime (1.7.2), Simples Nacional (1.0.2) or the DANFSe generator (1.0.0): the three Receita Federal repositories running side by side. |
+| **Guided mode** | Forms built from the contract each engine publishes. Regular regime: state and city, CST and cClassTrib from the table in force, and NCM or NBS looked up in the engine. Simples Nacional: document and regime in the engine's own terms, activities (cAtivSN) from the engine, and the taxpayer's effective rates entered by whoever simulates. No tax value is prefilled. |
+| **Developer mode** | JSON editor in each engine's input shape, fictitious examples, file import, validate, format and copy. Both modes use the same path to the engine. |
+| **Generate the DANFSe** | An NFS-e XML (fictitious example or your file) becomes the PDF drawn by the official generator, with optional invoice status and stub. |
 | **See the engine's answer** | Per-item state, errors with the field path, the calculation trail as text and the item values. |
 | **Inspect and export** | Tables labeled with the engine's own field descriptions, raw request and response side by side, JSON and CSV export, and local history (browser only). |
 | **Use the public API** | No sign-up, no key, open CORS, measured limits. |
 | **Follow the project** | Live GitHub card on the page: commits, issues, PRs, contributors and the latest CI run. |
 
 <div align="center">
-<img src="docs/assets/simulador-en.gif" alt="Simulator: picking an example, the official engine's answer, a per-item error and invalid input" width="100%">
+<img src="docs/assets/simulador-en.gif" alt="Simulator: picking the engine, Simples Nacional in guided mode, a per-item error in the regular regime and the DANFSe PDF" width="100%">
 </div>
 
 ## Public API
@@ -72,8 +74,12 @@ curl -X POST https://efer.online/api/brasil-tax-playground/simular/regime-regula
 
 | Method | Route | Returns |
 |---|---|---|
-| `GET` | `/engine/status` | Engine state and version (app, database and database date). |
+| `GET` | `/engine/status` | Regular regime engine state and version (app, database and database date). |
+| `GET` | `/engine/{motor}/status` | The same for `regime-regular`, `simples-nacional` or `danfse`. |
 | `POST` | `/simular/regime-regular` | The request, the raw engine response, its version and `x-warning-dados-simulados`. |
+| `POST` | `/simular/simples-nacional` | The same for Simples Nacional (the engine's "não assistido" endpoint; effective rates in the body). |
+| `POST` | `/danfse` | Body: the NFS-e XML. Returns the official generator's PDF (`?stc=0\|1\|2`, `?canhoto=false`). |
+| `GET` | `/dados-abertos/{recurso}` | Engine lists used by the forms (state, city, CST, NCM, NBS, Simples activities), from a closed list. |
 | `GET` | `/github` | Repository summary used by the page's GitHub card. |
 
 <details>
@@ -91,6 +97,7 @@ Limits come from load tests on the server (about 30 req/s with 1 item and 6 req/
 | Body | 512 KB |
 | Concurrent engine calls | 3, queue of 32 (3 s max wait) |
 | Engine timeout | 8 s |
+| DANFSe | XML up to 500 KB; 2 PDFs at a time, queue of 8; 10 s timeout |
 
 | Code | When |
 |---|---|
@@ -151,6 +158,9 @@ In the app's `.env.local`:
 
 ```env
 REGIME_REGULAR_ENGINE_URL=http://localhost:8080/api
+# optional: Simples Nacional (default port 8082) and the DANFSe generator (run it with SERVER_PORT=8083)
+SIMPLES_NACIONAL_ENGINE_URL=http://localhost:8082/api
+DANFSE_ENGINE_URL=http://localhost:8083
 ```
 
 Step by step, contracts and gotchas: [docs/upstream-integration.md](docs/upstream-integration.md) (Portuguese).
@@ -189,8 +199,8 @@ Step by step, contracts and gotchas: [docs/upstream-integration.md](docs/upstrea
 | Repository | Status here |
 |---|---|
 | [calculadora-rtc-regime-regular](https://github.com/ReceitaFederal/calculadora-rtc-regime-regular) | Integrated (1.7.2) |
-| [calculadora-rtc-simples-nacional](https://github.com/ReceitaFederal/calculadora-rtc-simples-nacional) | Planned |
-| [calculadora-rtc-gerador-danfse](https://github.com/ReceitaFederal/calculadora-rtc-gerador-danfse) | Planned (renders a PDF from XML; does not calculate taxes) |
+| [calculadora-rtc-simples-nacional](https://github.com/ReceitaFederal/calculadora-rtc-simples-nacional) | Integrated (1.0.2) |
+| [calculadora-rtc-gerador-danfse](https://github.com/ReceitaFederal/calculadora-rtc-gerador-danfse) | Integrated (1.0.0; renders a PDF from the XML, does not calculate taxes) |
 
 ## Contributing
 
@@ -201,5 +211,5 @@ Issues, PRs and stars help. Read [CONTRIBUTING.md](CONTRIBUTING.md) first; the o
 [MIT](LICENSE) © Efer Eder. The official engines have their own license (MIT) and copyright holder (Receita Federal do Brasil) and are not redistributed here.
 
 <div align="center">
-<sub>The GIFs in this README are generated from real screens of the public instance by <code>scripts/readme/</code>.</sub>
+<sub>The GIFs in this README are generated by <code>scripts/readme/</code> from real screens of the app wired to the official engines and real responses from the public API.</sub>
 </div>

@@ -117,21 +117,48 @@ O exemplo completo de requisição/resposta está em [`docs/exemplos.md` do upst
 
 ---
 
-## 2. Simples Nacional (`calculadora-rtc-simples-nacional`) — planejado
+## 2. Simples Nacional (`calculadora-rtc-simples-nacional`) — integrado (1.0.2)
 
 - Mesma stack (Java 25, Spring Boot 4.1.2, SQLite, Flyway). Porta **8082**, base `http://localhost:8082/api`; métricas em `http://localhost:9103/metrics`.
 - O banco é gerado com os scripts Flyway **do repositório do regime regular**: o README manda copiar a pasta `flyway/` de lá para a raiz do clone do Simples.
 - Endpoints (README): `POST /calculadora/observabilidade/simples-nacional`, `GET /calculadora/observabilidade/simples-nacional/erros?codigo=VSN-001`, `GET /calculadora/simples-nacional/atividades?data=AAAA-MM-DD`, `GET /calculadora/simples-nacional/atividades/{codigo}?data=...`, `GET /versao`, `GET /versao/status` (offline).
 - JAR: `target\api-simples-nacional.jar`.
-- **Não integrado** neste projeto. Contrato de entrada ainda não lido.
+- Tag `1.0.2` = commit `f90b652`; `main` em `a926d5a` (merge do release, mesma árvore).
 
-## 3. Gerador DANFSe (`calculadora-rtc-gerador-danfse`) — planejado
+### Verificado nesta máquina (21/11/2026, Temurin JDK 25.0.3)
+
+- `mvnw.cmd flyway:migrate` com a pasta `flyway/` copiada do clone 1.7.2 do regime regular: banco `V0073` (2026-11-09), o mesmo do regime regular.
+- `mvnw.cmd clean package`: **376 testes, 0 falhas**, `target\api-simples-nacional.jar` (85 MB).
+- Imagem de execução nossa em `deploy/engine-simples/Dockerfile` (mesmo padrão do regime regular, heap 256 MB). `GET /api/versao` → `versaoApp 1.0.2`, `versaoDb V0073`.
+
+### Endpoint usado: "não assistido"
+
+O OpenAPI 1.0.2 marca `POST /calculadora/observabilidade/simples-nacional` como **OBSOLETO** e indica `POST /calculadora/observabilidade/simples-nacional/nao-assistido`, que atende NF-e, NFC-e, CT-e, CT-e OS, BP-e, BP-e TM, NFCom (com CRT) e NFS-e (91) com o mesmo contrato (`OperacaoSimplesNaoAssistidaInput`). O app usa esse.
+
+- O regime chega no vocabulário do documento: `CRT`/`tpRegimeIBSCBS` nos documentos com CRT; `opSimpNac`/`regApIBSCBSSN`/`regApTribSN` na NFS-e.
+- As **alíquotas efetivas do contribuinte** (`aliquotasEfetivas`: `fatorR`, `impedimentoSublimite` e um par CBS/IBS por anexo, mais o par sem redistribuição do ISS nos anexos III a V) vêm **no corpo**, informadas por quem chama. O próprio motor diz que a relação anexo → alíquota "é configurada externamente". Este app não fornece nem calcula alíquota: o formulário guiado pede os valores e os exemplos usam os do OpenAPI do motor.
+- A resposta tem o mesmo envelope do regime regular (`objetos[].nObj/estadoItem`, `tribCalc` com `memoriaCalculo`, `total`) e acrescenta `oper.regimeApuracao` e `resolucaoAliquotas` (anexo aplicado, par com ou sem redistribuição, regra e motivo por item). Estado novo: `NAO_CALCULADO` (atividade ausente ou não admitida no documento).
+- Dados abertos usados pelo formulário: `GET /calculadora/simples-nacional/atividades?data=&tpDoc=&cClassTrib=` e `GET /calculadora/observabilidade/simples-nacional/erros?codigo=VSN-000`. O motor do Simples não publica a tabela de cClassTrib; o formulário usa a do regime regular (mesma base).
+
+### Achados
+
+- **O exemplo de NFS-e publicado no OpenAPI 1.0.2 não passa no próprio motor**: a NBS `114051000` não existe na base `V0073`, e o item volta com `VSN-050`. O app traz esse exemplo exatamente como publicado (para mostrar o erro por item) e um exemplo de NFS-e que calcula, com NBS existente.
+- **A mitigação de segurança `-XX:-UseBASE64Intrinsics`** citada nos CHANGELOGs do Simples (1.0.1) e do regime regular (1.7.1) não aparece no código publicado (pom, `.mvn`, scripts). Ela foi aplicada nas duas imagens de execução deste projeto (`JAVA_OPTS`).
+
+## 3. Gerador DANFSe (`calculadora-rtc-gerador-danfse`) — integrado (1.0.0)
 
 - Serviço HTTP em Go (README pede Go 1.27+; esta máquina tem Go 1.27.3). Tem `Dockerfile` (`docker build -t danfse-go .` / `docker run -p 8080:8080 danfse-go:latest`).
 - Porta padrão `8080` (`SERVER_PORT`) — **conflita** com o regime regular; ao rodar os dois, use outra porta (ex.: `SERVER_PORT=8081`).
 - `POST /api/danfse` (corpo `application/xml`, parâmetros `stc` e `canhoto`) → PDF. Health: `GET /health/live`, `GET /health/ready`. Swagger em `/api/swagger-ui/index.html`.
 - Limite de XML: 5 MiB por padrão (`XML_MAX_SIZE_BYTES`). Telemetria OTel desligada por padrão.
-- **Não integrado** neste projeto.
+
+### Verificado nesta máquina (21/11/2026)
+
+- Imagem construída com o **Dockerfile do próprio upstream** (tag `1.0.0`, Go 1.27.1, `alpine:latest`), 26 MB salva com `docker save`. Na instância roda como `nobody`, com sistema de arquivos somente leitura e `/tmp` em memória: funciona sem ajuste.
+- Não há XML de exemplo no repositório (os testes montam XML em Go). O exemplo deste projeto (`lib/danfse/exemplo.ts`) foi escrito a partir do modelo que o gerador lê (`internal/domain/models/models.go`): CNPJ e CPF zerados, homologação (`tpAmb 2`) e nenhum valor de tributo. O gerador carimba "NFS-e SEM VALIDADE JURÍDICA" nesse caso.
+- Erros vêm como `400` com `{"sucesso": false, "mensagem": "..."}` (ex.: `infNFSe Id is empty`). O README do upstream avisa que falhas internas também saem como `400` por enquanto. O BFF repassa como `422`, com a mensagem do gerador.
+- Medição local: ~230 ms por PDF (8,6 PDFs/s com 2 em paralelo), ~20 a 40 MB de RAM.
+- Sem endpoint de versão: o status usa `GET /health/ready` e mostra a tag empacotada (`DANFSE_ENGINE_VERSAO`).
 
 ---
 

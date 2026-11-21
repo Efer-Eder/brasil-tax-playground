@@ -99,3 +99,20 @@ Medições (ambiente: Windows 11, Node 24, motor no Docker local; método: 20 re
 - O motor 1.7.2 devolve erros em ordem não determinística; quem integrar não deve depender da ordem.
 - Os dados abertos (CST e cClassTrib) vêm da base do motor em uso; a lista muda quando a base muda (por exemplo, V0073 → V0074).
 - A instância pública é única e compartilhada; limites e capacidade em `docs/deploy-efer-online.md`.
+
+## 7. Simples Nacional e DANFSe (2026-11-21)
+
+| Item | Estado | Evidência |
+|---|---|---|
+| Simples Nacional 1.0.2 (`f90b652`) | Testado | Build oficial com 376 testes verdes; contrato OpenAPI versionado (`lib/tax-engine/contrato/simples-nacional.openapi.json`) e comparado com o motor rodando; fixtures gravadas do motor; E2E guiado e desenvolvedor. |
+| Gerador DANFSe 1.0.0 (`8d79e6b`) | Testado | Imagem do Dockerfile do upstream; PDF e recusa gravados do serviço real; E2E. |
+| Compose com os três serviços | Testado localmente | `docker compose up` no Docker local: os três respondem pela API do app; DANFSe como `nobody` e só leitura. |
+| Publicação em efer.online | Pendente | Aguardando aprovação. |
+
+Achados (detalhes em `docs/upstream-integration.md`):
+
+- **P2**: o exemplo de NFS-e do OpenAPI do Simples 1.0.2 usa a NBS `114051000`, que não existe na base `V0073` (o motor devolve `VSN-050`).
+- **P2**: a mitigação `-XX:-UseBASE64Intrinsics` citada nos CHANGELOGs dos dois motores Java não está no código publicado; aplicada aqui nas imagens de execução.
+- **P3**: o endpoint clássico do Simples está marcado como obsoleto; o app usa o não assistido.
+- **P3**: o gerador de DANFSe responde `400` também para falhas internas (documentado pelo upstream).
+

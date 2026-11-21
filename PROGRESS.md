@@ -1,5 +1,21 @@
 # Progresso
 
+## 2026-11-21 — Simples Nacional e gerador de DANFSe
+
+Os outros dois repositórios oficiais entram no playground.
+
+### Feito
+
+- Simples Nacional 1.0.2 compilado pelos passos do README (376 testes do upstream, 0 falhas), imagem de execução própria e integração pelo endpoint não assistido. Formulário guiado em 5 etapas com as opções escritas no contrato do motor e as alíquotas efetivas informadas por quem simula; modo desenvolvedor com 3 exemplos.
+- Gerador de DANFSe 1.0.0 com a imagem do Dockerfile do upstream; painel que manda o XML e mostra o PDF.
+- Pipeline de simulação e cliente HTTP comuns aos motores; status por motor; dados abertos do Simples na lista branca.
+- Testes: 165 unitários, 8 de contrato e regressão (incluindo o contrato OpenAPI do Simples), 104 de paridade do regime regular, 12 E2E com replay dos três serviços. Pilha completa do Compose validada no Docker local.
+- GIFs do README regravados.
+
+### Próximo passo objetivo
+
+- Com aprovação: push e deploy (Compose com os três serviços; Nginx não muda) e medição na VPS.
+
 ## 2026-11-21 — Auditoria do motor e interface guiada
 
 **Status:** implementado e testado localmente; não publicado (push e deploy aguardam aprovação).

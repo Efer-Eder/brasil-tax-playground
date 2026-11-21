@@ -4,6 +4,13 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); 
 
 ## [Não lançado]
 
+### Adicionado (Simples Nacional e DANFSe)
+
+- Motor oficial do Simples Nacional 1.0.2 (endpoint não assistido): formulário guiado em 5 etapas, modo desenvolvedor com exemplos, atividades (cAtivSN) e erros VSN pelos dados abertos, resolução das alíquotas no resultado.
+- Gerador oficial de DANFSe 1.0.0: XML da NFS-e vira PDF, com exemplo fictício, importação, situação da nota e canhoto.
+- Seletor de motor no simulador; status de cada serviço em `/api/engine/{motor}/status` e na página inicial.
+- Compose com os três serviços, imagens endurecidas e `-XX:-UseBASE64Intrinsics` nas JVMs, como pedem os CHANGELOGs do upstream.
+
 ### Corrigido
 
 - O BFF reescrevia a entrada e a saída (o zod reordenava chaves e o corpo era reenviado reconstruído). Agora o texto original vai ao motor e a resposta volta como o motor mandou.

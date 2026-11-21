@@ -227,73 +227,74 @@ def gif_tour(idioma: str):
 def gif_simulador(idioma: str):
     L = {
         "pt": [
-            ("Escolha um exemplo ou edite o JSON", "Operação no formato OperacaoInput do motor. Os exemplos são fictícios."),
-            ("O motor oficial responde", "Item 1 calculado, com a memória de cálculo escrita pelo próprio motor."),
-            ("Erro por item, sem derrubar a operação", "O item 2 volta com REG-005 e o caminho do campo, como o motor mandou."),
-            ("Requisição e resposta cruas", "Inspetor JSON lado a lado e exportação da simulação."),
-            ("Entrada inválida não chega ao motor", "A validação estrutural explica cada problema com o caminho do campo."),
+            ("Escolha o motor oficial", "Regime regular, Simples Nacional ou o gerador de DANFSe. Os três rodam aqui."),
+            ("Simples Nacional no modo guiado", "Documento e regime no vocabulário do motor; as opções vêm do contrato dele."),
+            ("O motor do Simples responde", "Item calculado, memória de cálculo e o anexo e o par de alíquotas que ele escolheu."),
+            ("Erro por item, sem derrubar a operação", "No regime regular, o item 2 volta com o código e o caminho do campo."),
+            ("DANFSe em PDF", "O XML fictício de uma NFS-e vira o PDF desenhado pelo gerador oficial."),
         ],
         "en": [
-            ("Pick an example or edit the JSON", "Operation in the engine's OperacaoInput shape. Examples are fictitious."),
-            ("The official engine answers", "Item 1 computed, with the calculation trail written by the engine itself."),
-            ("Per-item errors, operation stays up", "Item 2 comes back with REG-005 and the field path, exactly as the engine sent it."),
-            ("Raw request and response", "Side-by-side JSON inspector and simulation export."),
-            ("Invalid input never reaches the engine", "Structural validation explains each problem with its field path."),
+            ("Pick the official engine", "Regular regime, Simples Nacional or the DANFSe generator. All three run here."),
+            ("Simples Nacional, guided mode", "Document and regime in the engine's own terms; options come from its contract."),
+            ("The Simples engine answers", "Item computed, the calculation trail, and the annex and rate pair it picked."),
+            ("Per-item errors, operation stays up", "In the regular regime, item 2 comes back with the code and the field path."),
+            ("DANFSe as a PDF", "A fictitious NFS-e XML becomes the PDF drawn by the official generator."),
         ],
     }[idioma]
     url = "efer.online/projeto/brasil-tax-playground/simular"
     pos = json.loads((ORIGEM / "posicoes.json").read_text(encoding="utf-8"))
-    ini = Image.open(ORIGEM / "sim-02-exemplo.png").convert("RGB")
-    inteiro = Image.open(ORIGEM / "sim-04-resultado-inteiro.png").convert("RGB")
-    invalido = Image.open(ORIGEM / "sim-05-invalido.png").convert("RGB")
-    topo = ini.crop((0, 0, 1280, 92))
+    motores = Image.open(ORIGEM / "sim-01-motores.png").convert("RGB")
+    operacao = Image.open(ORIGEM / "sim-02-simples-operacao.png").convert("RGB")
+    simples = Image.open(ORIGEM / "sim-03-simples-resultado.png").convert("RGB")
+    regime = Image.open(ORIGEM / "sim-04-regime-erro.png").convert("RGB")
+    danfse = Image.open(ORIGEM / "sim-05-danfse.png").convert("RGB")
+    topo = motores.crop((0, 0, 1280, 92))
     v = Video(JW, JH, 15)
-    n = 5
 
-    # 1) cursor vai até o seletor de exemplo.
-    sel = pos["select"]
-    alvo = (WX + (sel["x"] + sel["w"] * 0.7) * ESC, WY + BARRA + (sel["y"] + sel["h"] * 0.55) * ESC)
-    origem = (WX + 700, WY + BARRA + 420)
+    # 1) cursor vai até o card do Simples Nacional e clica.
+    alvo_caixa = pos["simples"]
+    alvo = (WX + (alvo_caixa["x"] + alvo_caixa["w"] * 0.5) * ESC, WY + BARRA + (alvo_caixa["y"] + alvo_caixa["h"] * 0.4) * ESC)
+    origem = (WX + 200, WY + BARRA + 520)
+    v.add(janela(motores, L[0], "01", 0.0, url), 1.0)
     for k in range(20):
         t = ease(k / 19)
-        quadro = janela(ini, L[0], "01", 0.0, url)
+        quadro = janela(motores, L[0], "01", 0.0, url)
         cursor(quadro, origem[0] + (alvo[0] - origem[0]) * t, origem[1] + (alvo[1] - origem[1]) * t)
         v.add(quadro)
     for k in range(8):
-        quadro = janela(ini, L[0], "01", 0.0, url)
+        quadro = janela(motores, L[0], "01", 0.0, url)
         cursor(quadro, *alvo, clique=k / 7)
         v.add(quadro)
-    quadro = janela(ini, L[0], "01", 0.0, url)
-    cursor(quadro, *alvo)
-    v.add(quadro, 1.2)
 
-    # 2) resultado: topo da página com o item 1 e a memória de cálculo.
-    y_item1 = 0
-    a = recorte(inteiro, y_item1, topo)
+    # 2) operação do Simples preenchida.
     for k in range(8):
-        v.add(janela(misturar(ini, a, k / 7), L[1], "02", 0.25 * k / 7, url))
-    v.add(janela(a, L[1], "02", 0.25, url), 2.6)
+        v.add(janela(misturar(motores, operacao, k / 7), L[1], "02", 0.25 * k / 7, url))
+    v.add(janela(operacao, L[1], "02", 0.25, url), 2.6)
 
-    # 3) rola até o item 2.
-    y_item2 = pos["item2"] - 160
-    for k in range(1, 19):
-        yy = y_item1 + (y_item2 - y_item1) * ease(k / 18)
-        v.add(janela(recorte(inteiro, yy, topo), L[2], "03", 0.25 + 0.25 * k / 18, url))
-    v.add(janela(recorte(inteiro, y_item2, topo), L[2], "03", 0.5, url), 2.6)
-
-    # 4) inspetor JSON no fim.
-    y_fim = inteiro.height - 800
-    for k in range(1, 19):
-        yy = y_item2 + (y_fim - y_item2) * ease(k / 18)
-        v.add(janela(recorte(inteiro, yy, topo), L[3], "04", 0.5 + 0.25 * k / 18, url))
-    v.add(janela(recorte(inteiro, y_fim, topo), L[3], "04", 0.75, url), 2.2)
-
-    # 5) entrada inválida.
-    b = invalido
-    ultimo = recorte(inteiro, y_fim, topo)
+    # 3) resultado do Simples: do item à resolução das alíquotas.
+    y_item = max(0, pos["simplesItem"] - 160)
+    y_res = max(0, min(pos["simplesResolucao"] - 140, simples.height - 800))
+    a = recorte(simples, y_item, topo)
     for k in range(8):
-        v.add(janela(misturar(ultimo, b, k / 7), L[4], "05", 0.75 + 0.25 * k / 7, url))
-    v.add(janela(b, L[4], "05", 1.0, url), 2.8)
+        v.add(janela(misturar(operacao, a, k / 7), L[2], "03", 0.25 + 0.1 * k / 7, url))
+    v.add(janela(a, L[2], "03", 0.35, url), 2.0)
+    for k in range(1, 19):
+        yy = y_item + (y_res - y_item) * ease(k / 18)
+        v.add(janela(recorte(simples, yy, topo), L[2], "03", 0.35 + 0.15 * k / 18, url))
+    v.add(janela(recorte(simples, y_res, topo), L[2], "03", 0.5, url), 2.4)
+
+    # 4) regime regular: item 2 com erro.
+    y2 = max(0, min(pos["item2"] - 160, regime.height - 800))
+    b = recorte(regime, y2, topo)
+    ultimo = recorte(simples, y_res, topo)
+    for k in range(8):
+        v.add(janela(misturar(ultimo, b, k / 7), L[3], "04", 0.5 + 0.25 * k / 7, url))
+    v.add(janela(b, L[3], "04", 0.75, url), 2.6)
+
+    # 5) DANFSe.
+    for k in range(8):
+        v.add(janela(misturar(b, danfse, k / 7), L[4], "05", 0.75 + 0.25 * k / 7, url))
+    v.add(janela(danfse, L[4], "05", 1.0, url), 3.0)
     v.salvar(DESTINO / f"simulador-{idioma}.gif")
 
 
@@ -405,14 +406,14 @@ def gif_banner(idioma: str):
     W, H = 1200, 384
     T = {
         "pt": {
-            "chip": "open source · MIT · motor oficial 1.7.2",
-            "sub": "Um playground para os motores open source da Reforma Tributária: CBS, IBS e IS calculados pelo motor da Receita, nunca pelo app.",
+            "chip": "open source · MIT · 3 serviços oficiais",
+            "sub": "Um playground para os motores open source da Reforma Tributária: CBS, IBS e IS calculados pelos motores da Receita, nunca pelo app.",
             "nos": ["navegador", "BFF", "motor oficial"],
             "resp": "resposta crua do motor",
         },
         "en": {
-            "chip": "open source · MIT · official engine 1.7.2",
-            "sub": "A playground for Brazil's open source tax reform engines: CBS, IBS and IS computed by the official engine, never by the app.",
+            "chip": "open source · MIT · 3 official services",
+            "sub": "A playground for Brazil's open source tax reform engines: CBS, IBS and IS computed by the official engines, never by the app.",
             "nos": ["browser", "BFF", "official engine"],
             "resp": "raw engine response",
         },

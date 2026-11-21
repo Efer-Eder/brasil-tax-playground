@@ -23,7 +23,7 @@
 </div>
 
 > [!IMPORTANT]
-> Ferramenta independente, não oficial e não substitui orientação contábil ou tributária. Sem vínculo com a Receita Federal. Projeto **em desenvolvimento**. O formulário guiado e o histórico local já estão na instância pública.
+> Ferramenta independente, não oficial e não substitui orientação contábil ou tributária. Sem vínculo com a Receita Federal. Projeto **em desenvolvimento**. Simples Nacional e gerador de DANFSe já estão no código; a instância pública recebe essa versão na próxima publicação.
 
 ## Por que isso existe
 
@@ -39,15 +39,17 @@ A regra que guia tudo: **nenhuma alíquota, regra ou cálculo fiscal é escrito 
 
 | | |
 |---|---|
-| **Simular no modo guiado** | Cinco etapas montadas a partir do contrato publicado pelo motor: UF e município, CST e cClassTrib da tabela vigente na data e NCM ou NBS consultados no próprio motor. Nenhum valor fiscal é pré-preenchido. |
-| **Simular no modo desenvolvedor** | Editor JSON no formato `OperacaoInput`, exemplos fictícios, importar arquivo, validar, formatar e copiar. Os dois modos usam o mesmo caminho até o motor. |
+| **Escolher o serviço oficial** | Regime regular (1.7.2), Simples Nacional (1.0.2) ou gerador de DANFSe (1.0.0), os três repositórios da Receita rodando lado a lado. |
+| **Simular no modo guiado** | Formulários montados a partir do contrato publicado por cada motor. Regime regular: UF e município, CST e cClassTrib da tabela vigente e NCM ou NBS consultados no motor. Simples Nacional: documento e regime no vocabulário do motor, atividades (cAtivSN) vindas dele e as alíquotas efetivas do contribuinte informadas por quem simula. Nenhum valor fiscal é pré-preenchido. |
+| **Simular no modo desenvolvedor** | Editor JSON no formato de entrada de cada motor, exemplos fictícios, importar arquivo, validar, formatar e copiar. Os dois modos usam o mesmo caminho até o motor. |
+| **Gerar o DANFSe** | O XML de uma NFS-e (exemplo fictício ou importado) vira o PDF desenhado pelo gerador oficial, com situação da nota e canhoto opcionais. |
 | **Ver a resposta do motor** | Estado de cada item, erros com o caminho do campo, memória de cálculo em texto e valores do item. |
 | **Inspecionar e exportar** | Tabelas com os rótulos que o motor publica, requisição e resposta cruas lado a lado, exportação em JSON e CSV e histórico local (só no navegador). |
 | **Usar a API pública** | Sem cadastro, sem chave, CORS aberto, limites medidos. |
 | **Acompanhar o projeto** | Card ao vivo do GitHub na página: commits, issues, PRs, contribuidores e último CI. |
 
 <div align="center">
-<img src="docs/assets/simulador-pt.gif" alt="Simulador: exemplo escolhido, resposta do motor oficial, erro por item e entrada inválida" width="100%">
+<img src="docs/assets/simulador-pt.gif" alt="Simulador: escolha do motor, Simples Nacional no modo guiado, erro por item no regime regular e DANFSe em PDF" width="100%">
 </div>
 
 ## API pública
@@ -72,8 +74,12 @@ curl -X POST https://efer.online/api/brasil-tax-playground/simular/regime-regula
 
 | Método | Rota | O que devolve |
 |---|---|---|
-| `GET` | `/engine/status` | Estado do motor e versão (app, base de dados e data da base). |
+| `GET` | `/engine/status` | Estado do motor de regime regular e versão (app, base de dados e data da base). |
+| `GET` | `/engine/{motor}/status` | O mesmo para `regime-regular`, `simples-nacional` ou `danfse`. |
 | `POST` | `/simular/regime-regular` | Requisição, resposta crua do motor, versão e `x-warning-dados-simulados`. |
+| `POST` | `/simular/simples-nacional` | O mesmo para o Simples Nacional (endpoint não assistido do motor; alíquotas efetivas no corpo). |
+| `POST` | `/danfse` | Corpo: XML da NFS-e. Devolve o PDF do gerador oficial (`?stc=0\|1\|2`, `?canhoto=false`). |
+| `GET` | `/dados-abertos/{recurso}` | Listas do motor usadas pelos formulários (UF, município, CST, NCM, NBS, atividades do Simples), por lista fechada. |
 | `GET` | `/github` | Resumo do repositório usado pelo card da página. |
 
 <details>
@@ -91,6 +97,7 @@ Os limites saíram de teste de carga no servidor (cerca de 30 req/s com 1 item e
 | Corpo | 512 KB |
 | Chamadas simultâneas ao motor | 3, com fila de 32 (espera máxima de 3 s) |
 | Timeout do motor | 8 s |
+| DANFSe | XML de até 500 KB; 2 PDFs ao mesmo tempo, fila de 8; timeout de 10 s |
 
 | Código | Quando |
 |---|---|
@@ -151,6 +158,9 @@ No `.env.local` do app:
 
 ```env
 REGIME_REGULAR_ENGINE_URL=http://localhost:8080/api
+# opcionais: Simples Nacional (porta padrão 8082) e gerador de DANFSe (rode com SERVER_PORT=8083)
+SIMPLES_NACIONAL_ENGINE_URL=http://localhost:8082/api
+DANFSE_ENGINE_URL=http://localhost:8083
 ```
 
 Passo a passo, contratos e armadilhas: [docs/upstream-integration.md](docs/upstream-integration.md).
@@ -189,8 +199,8 @@ Passo a passo, contratos e armadilhas: [docs/upstream-integration.md](docs/upstr
 | Repositório | Estado aqui |
 |---|---|
 | [calculadora-rtc-regime-regular](https://github.com/ReceitaFederal/calculadora-rtc-regime-regular) | Integrado (1.7.2) |
-| [calculadora-rtc-simples-nacional](https://github.com/ReceitaFederal/calculadora-rtc-simples-nacional) | Planejado |
-| [calculadora-rtc-gerador-danfse](https://github.com/ReceitaFederal/calculadora-rtc-gerador-danfse) | Planejado (gera PDF a partir de XML; não calcula tributos) |
+| [calculadora-rtc-simples-nacional](https://github.com/ReceitaFederal/calculadora-rtc-simples-nacional) | Integrado (1.0.2) |
+| [calculadora-rtc-gerador-danfse](https://github.com/ReceitaFederal/calculadora-rtc-gerador-danfse) | Integrado (1.0.0; gera PDF a partir do XML, não calcula tributos) |
 
 ## Documentação
 
@@ -209,5 +219,5 @@ Issue, PR e estrela ajudam. Antes, leia o [CONTRIBUTING.md](CONTRIBUTING.md); a 
 [MIT](LICENSE) © Efer Eder. Os motores oficiais têm licença (MIT) e titular próprios (Receita Federal do Brasil) e não são distribuídos aqui.
 
 <div align="center">
-<sub>Os GIFs deste README são gerados a partir de telas reais da instância pública por <code>scripts/readme/</code>.</sub>
+<sub>Os GIFs deste README são gerados por <code>scripts/readme/</code> a partir de telas reais do app ligado aos motores oficiais e de respostas reais da API pública.</sub>
 </div>

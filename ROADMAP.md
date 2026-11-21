@@ -38,6 +38,15 @@ Nada aqui está pronto, a não ser o que estiver marcado. Ordem sujeita a mudan�
 - [ ] Regravar os GIFs do README com a interface nova.
 - [ ] Comparar duas simulações lado a lado.
 
+## Simples Nacional e DANFSe (2026-11-21)
+
+- [x] Motor do Simples Nacional 1.0.2 integrado (guiado, desenvolvedor, dados abertos, fixtures e E2E).
+- [x] Gerador de DANFSe 1.0.0 integrado (XML → PDF, fixtures e E2E).
+- [x] GIFs do README regravados com a interface nova.
+- [ ] Publicar em efer.online (aguardando aprovação).
+- [ ] Medir Simples e DANFSe na VPS e revisar os limites.
+- [ ] Emissor didático de NFS-e: formulário → XML validado no XSD → DANFSe "sem valor fiscal", sem transmitir nada.
+
 ## Depois
 
 - Simples Nacional (porta 8082).
