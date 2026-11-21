@@ -5,6 +5,7 @@ import {
   montarPayload,
   novaOperacao,
   novoItem,
+  validarOperacaoGuiada,
   validarPayload,
   type OperacaoGuiada,
 } from "@/lib/simulation/guiado";
@@ -85,6 +86,16 @@ describe("montarPayload", () => {
   });
 });
 
+describe("validarOperacaoGuiada", () => {
+  it("does not pick a date on its own and requires one", () => {
+    const op = novaOperacao();
+    expect(op.data).toBe("");
+    expect(montarPayload(op)).not.toHaveProperty("dhFatoGerador");
+    expect(validarOperacaoGuiada(op)[0]).toEqual({ caminho: "dhFatoGerador", mensagem: "Informe a data do fato gerador" });
+    expect(validarOperacaoGuiada(preenchida())).toEqual([]);
+  });
+});
+
 describe("validarPayload", () => {
   it("accepts a well-formed guided operation", () => {
     expect(validarPayload(montarPayload(preenchida()))).toEqual([]);
@@ -98,7 +109,7 @@ describe("validarPayload", () => {
     const problemas = validarPayload(montarPayload(op));
     expect(problemas).toEqual(
       expect.arrayContaining([
-        { caminho: "municipio", mensagem: "Número inválido" },
+        { caminho: "municipio", mensagem: "Obrigatório" },
         expect.objectContaining({ caminho: "itens.0.cst" }),
         { caminho: "itens.0.baseCalculo", mensagem: "Número inválido" },
       ]),

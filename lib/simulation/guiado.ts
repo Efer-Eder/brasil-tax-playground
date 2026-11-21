@@ -72,12 +72,16 @@ export function novoItem(numero: number): ItemGuiado {
   };
 }
 
-/** Operação vazia. `id` e `versao` são identificadores do documento, não dados fiscais. */
-export function novaOperacao(hoje: Date = new Date(), id = "simulacao"): OperacaoGuiada {
+/**
+ * Operação vazia. `id` e `versao` são identificadores do documento, não dados
+ * fiscais. A data do fato gerador começa vazia: o formulário não escolhe por
+ * quem preenche.
+ */
+export function novaOperacao(data?: Date, id = "simulacao"): OperacaoGuiada {
   return {
     id,
     versao: "1.0.0",
-    data: hoje.toISOString().slice(0, 10),
+    data: data ? data.toISOString().slice(0, 10) : "",
     hora: "10:00",
     fuso: "-03:00",
     uf: "",
@@ -169,14 +173,14 @@ export function montarPayload(op: OperacaoGuiada): Record<string, unknown> {
   return {
     id: op.id.trim(),
     versao: op.versao.trim(),
-    dhFatoGerador: `${op.data}T${op.hora}:00${op.fuso}`,
-    municipio: lerInteiro(op.municipio) ?? Number.NaN,
+    ...(op.data ? { dhFatoGerador: `${op.data}T${op.hora || "00:00"}:00${op.fuso}` } : {}),
+    ...(op.municipio.trim() ? { municipio: lerInteiro(op.municipio) } : {}),
     ...(op.uf ? { uf: op.uf } : {}),
     ...(op.tpDoc.trim() ? { tpDoc: lerInteiro(op.tpDoc) } : {}),
     ...(op.usarCompraGov
       ? {
           gCompraGov: {
-            tpEnteGov: lerInteiro(op.compraGov.tpEnteGov) ?? Number.NaN,
+            ...(op.compraGov.tpEnteGov ? { tpEnteGov: lerInteiro(op.compraGov.tpEnteGov) } : {}),
             ...(op.compraGov.tpOperGov ? { tpOperGov: lerInteiro(op.compraGov.tpOperGov) } : {}),
           },
         }
@@ -200,8 +204,22 @@ export function validarPayload(payload: Record<string, unknown>): ProblemaCampo[
   if (r.success) return [];
   return r.error.issues.map((i) => ({
     caminho: i.path.join("."),
-    mensagem: /received NaN|expected number/i.test(i.message) ? "Número inválido" : i.message,
+    mensagem: /received undefined/i.test(i.message)
+      ? "Obrigatório"
+      : /received NaN|expected number/i.test(i.message)
+        ? "Número inválido"
+        : i.message,
   }));
+}
+
+/**
+ * Conferência do modo guiado: o espelho do contrato mais a data do fato
+ * gerador, que o motor exige (ela ou o campo obsoleto dataHoraEmissao).
+ */
+export function validarOperacaoGuiada(op: OperacaoGuiada): ProblemaCampo[] {
+  const problemas = validarPayload(montarPayload(op));
+  if (!op.data) problemas.unshift({ caminho: "dhFatoGerador", mensagem: "Informe a data do fato gerador" });
+  return problemas;
 }
 
 /** Etapa do formulário onde um problema deve aparecer. */
