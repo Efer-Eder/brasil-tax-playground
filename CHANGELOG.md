@@ -4,7 +4,18 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); 
 
 ## [Não lançado]
 
+### Corrigido
+
+- O BFF reescrevia a entrada e a saída (o zod reordenava chaves e o corpo era reenviado reconstruído). Agora o texto original vai ao motor e a resposta volta como o motor mandou.
+- A validação do BFF era mais restritiva que o motor e recusava 46 payloads oficiais do upstream. Agora só o envelope é exigido, e os erros de campo vêm do motor, por item.
+- Leitura do corpo com limite, sem carregar corpos grandes inteiros na memória; o endereço interno do motor saiu das respostas públicas.
+
 ### Adicionado
+
+- Formulário guiado em 5 etapas, montado a partir do OpenAPI e dos dados abertos do motor, e modo desenvolvedor com importar, validar, formatar e copiar, os dois pelo mesmo caminho de cálculo.
+- Tabelas de resultado com os rótulos publicados pelo motor, grupo `oper`, exportação CSV e histórico local.
+- `GET /api/dados-abertos/*` com lista branca, contrato OpenAPI versionado, teste de paridade com os payloads do upstream e cabeçalhos de segurança.
+- Templates de issue e de pull request; `DEVELOPMENT_REPORT.md`.
 
 - READMEs em pt-BR e en-US reescritos, com banner e GIFs animados gerados a partir de telas reais da instância pública (`scripts/readme/`).
 

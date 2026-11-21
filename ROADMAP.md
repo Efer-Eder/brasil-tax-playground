@@ -27,6 +27,17 @@ Nada aqui está pronto, a não ser o que estiver marcado. Ordem sujeita a mudan�
 - [ ] Acompanhar uso e latência por algumas semanas e revisar os limites.
 - [ ] Rollback automatizado para a release anterior.
 
+## Fase 3: auditoria e interface (2026-11-21)
+
+- [x] Paridade com os payloads de teste do upstream (102 casos) e correção do app para não reescrever entrada nem saída.
+- [x] Formulário guiado em 5 etapas a partir do contrato do motor; modo desenvolvedor no mesmo caminho.
+- [x] Resultado em tabelas com rótulos do motor, CSV e histórico local.
+- [x] Revisão de segurança (corpo com limite, URL interna, cabeçalhos).
+- [ ] Publicar a versão em efer.online (aguardando aprovação).
+- [ ] Paridade e contrato na CI (subir o motor no pipeline).
+- [ ] Regravar os GIFs do README com a interface nova.
+- [ ] Comparar duas simulações lado a lado.
+
 ## Depois
 
 - Simples Nacional (porta 8082).

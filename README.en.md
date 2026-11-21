@@ -23,7 +23,7 @@
 </div>
 
 > [!IMPORTANT]
-> Independent, unofficial tool. It does not replace accounting or tax advice and has no affiliation with Brazil's Federal Revenue Service (Receita Federal). **Work in progress**: input is a JSON editor for now; a guided form comes later. The UI is in Brazilian Portuguese.
+> Independent, unofficial tool. It does not replace accounting or tax advice and has no affiliation with Brazil's Federal Revenue Service (Receita Federal). **Work in progress**. The guided form and local history are in the code; the public instance gets this version on the next deploy. The UI is in Brazilian Portuguese.
 
 ## Why this exists
 
@@ -39,9 +39,10 @@ The one rule behind everything: **no tax rate, rule or calculation is written he
 
 | | |
 |---|---|
-| **Simulate a transaction** | JSON editor in the engine's `OperacaoInput` shape, with ready-made fictitious examples. |
+| **Guided mode** | Five steps built from the contract the engine publishes: state and city, CST and cClassTrib from the table in force on the date, and NCM or NBS looked up in the engine itself. No tax value is prefilled. |
+| **Developer mode** | JSON editor in the engine's `OperacaoInput` shape, fictitious examples, file import, validate, format and copy. Both modes use the same path to the engine. |
 | **See the engine's answer** | Per-item state, errors with the field path, the calculation trail as text and the item values. |
-| **Inspect and export** | Raw request and response side by side, and a JSON download of the simulation. |
+| **Inspect and export** | Tables labeled with the engine's own field descriptions, raw request and response side by side, JSON and CSV export, and local history (browser only). |
 | **Use the public API** | No sign-up, no key, open CORS, measured limits. |
 | **Follow the project** | Live GitHub card on the page: commits, issues, PRs, contributors and the latest CI run. |
 
@@ -116,7 +117,7 @@ flowchart LR
 
 - **Numbers only from the engine.** No tax rate, reduction or rule in the code.
 - **Mirrored contract.** Schemas copy the Bean Validation of the upstream input classes, with a link to the commit. Business rules stay in the engine.
-- **Tested against the real thing.** Fixtures recorded from the real engine, a parity test between response and UI, and a regression test that fails if upstream output changes.
+- **Tested against the real thing.** Parity with the upstream's own 102 test payloads (69 identical responses, 10 identical errors, 23 rejected by both), fixtures recorded from the engine, UI parity and a regression test that fails if upstream output changes. Report in [DEVELOPMENT_REPORT.md](DEVELOPMENT_REPORT.md).
 
 ## Run it locally
 
@@ -169,7 +170,8 @@ Step by step, contracts and gotchas: [docs/upstream-integration.md](docs/upstrea
 | `npm run typecheck` | Next route types + `tsc --noEmit` |
 | `npm test` | Unit tests (Vitest) |
 | `npm run test:e2e` | Playwright against a server that only replays recorded engine responses (run `npm run build` first) |
-| `npm run test:contract` | Contract and regression tests against a real engine (`CONTRACT_ENGINE_URL`) |
+| `npm run test:contract` | Contract (OpenAPI) and regression tests against a real engine (`CONTRACT_ENGINE_URL`) |
+| `npm run test:paridade` | Compares the app with the engine on the upstream test payloads (`CONTRACT_ENGINE_URL` + `UPSTREAM_TESTS_DIR`) |
 | `npm run fixtures:gravar` | Re-record fixtures from a real engine (`CONTRACT_ENGINE_URL` + `RECORD_FIXTURES=1`) |
 
 </details>

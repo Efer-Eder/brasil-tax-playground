@@ -23,7 +23,7 @@
 </div>
 
 > [!IMPORTANT]
-> Ferramenta independente, não oficial e não substitui orientação contábil ou tributária. Sem vínculo com a Receita Federal. Projeto **em desenvolvimento**: hoje a entrada é um editor JSON; o formulário guiado vem depois.
+> Ferramenta independente, não oficial e não substitui orientação contábil ou tributária. Sem vínculo com a Receita Federal. Projeto **em desenvolvimento**. O formulário guiado e o histórico local já estão no código; a instância pública recebe essa versão no próximo deploy.
 
 ## Por que isso existe
 
@@ -39,9 +39,10 @@ A regra que guia tudo: **nenhuma alíquota, regra ou cálculo fiscal é escrito 
 
 | | |
 |---|---|
-| **Simular uma operação** | Editor JSON no formato `OperacaoInput` do motor, com exemplos fictícios prontos. |
+| **Simular no modo guiado** | Cinco etapas montadas a partir do contrato publicado pelo motor: UF e município, CST e cClassTrib da tabela vigente na data e NCM ou NBS consultados no próprio motor. Nenhum valor fiscal é pré-preenchido. |
+| **Simular no modo desenvolvedor** | Editor JSON no formato `OperacaoInput`, exemplos fictícios, importar arquivo, validar, formatar e copiar. Os dois modos usam o mesmo caminho até o motor. |
 | **Ver a resposta do motor** | Estado de cada item, erros com o caminho do campo, memória de cálculo em texto e valores do item. |
-| **Inspecionar e exportar** | Requisição e resposta cruas lado a lado e download da simulação em JSON. |
+| **Inspecionar e exportar** | Tabelas com os rótulos que o motor publica, requisição e resposta cruas lado a lado, exportação em JSON e CSV e histórico local (só no navegador). |
 | **Usar a API pública** | Sem cadastro, sem chave, CORS aberto, limites medidos. |
 | **Acompanhar o projeto** | Card ao vivo do GitHub na página: commits, issues, PRs, contribuidores e último CI. |
 
@@ -116,7 +117,7 @@ flowchart LR
 
 - **Número só do motor.** Nenhuma alíquota, redução ou regra no código.
 - **Contrato espelhado.** Os schemas copiam a Bean Validation das classes de entrada do upstream, com link para o commit. Regra de negócio fica com o motor.
-- **Testado contra o real.** Fixtures gravadas do motor de verdade, teste de paridade entre resposta e tela, e regressão que falha se o upstream mudar a saída.
+- **Testado contra o real.** Paridade com os 102 payloads de teste do próprio upstream (69 respostas idênticas, 10 erros idênticos, 23 recusados pelos dois), fixtures gravadas do motor, paridade entre resposta e tela e regressão que falha se o upstream mudar a saída. Relatório em [DEVELOPMENT_REPORT.md](DEVELOPMENT_REPORT.md).
 
 ## Rodar na sua máquina
 
@@ -169,7 +170,8 @@ Passo a passo, contratos e armadilhas: [docs/upstream-integration.md](docs/upstr
 | `npm run typecheck` | Tipos de rotas do Next + `tsc --noEmit` |
 | `npm test` | Testes unitários (Vitest) |
 | `npm run test:e2e` | Playwright, com um servidor que só reproduz respostas gravadas do motor (rode `npm run build` antes) |
-| `npm run test:contract` | Contrato e regressão contra um motor real (`CONTRACT_ENGINE_URL`) |
+| `npm run test:contract` | Contrato (OpenAPI) e regressão contra um motor real (`CONTRACT_ENGINE_URL`) |
+| `npm run test:paridade` | Compara o app com o motor nos payloads de teste do upstream (`CONTRACT_ENGINE_URL` + `UPSTREAM_TESTS_DIR`) |
 | `npm run fixtures:gravar` | Regrava as fixtures a partir de um motor real (`CONTRACT_ENGINE_URL` + `RECORD_FIXTURES=1`) |
 
 </details>

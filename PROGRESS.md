@@ -1,5 +1,21 @@
 # Progresso
 
+## 2026-11-21 — Auditoria do motor e interface guiada
+
+**Status:** implementado e testado localmente; não publicado (push e deploy aguardam aprovação).
+
+### Feito
+
+- Auditoria do motor 1.7.2 (`32df719`, base V0073), com o motor no Docker local. Paridade com 102 payloads de teste do upstream revelou que o app reescrevia entrada e saída e recusava 46 entradas válidas; corrigido. Hoje: 69 idênticos, 10 erros idênticos, 23 recusados pelos dois.
+- Contrato OpenAPI versionado, BFF de dados abertos com lista branca, formulário guiado em 5 etapas, modo desenvolvedor no mesmo caminho, tabelas com rótulos do motor, CSV e histórico local.
+- Segurança: corpo com limite, URL interna fora das respostas, cabeçalhos HTTP. Templates de issue e PR.
+- Testes: 144 unitários, 7 de contrato e regressão, 104 de paridade, 9 E2E, lint, tipos, build e `npm audit` (0 vulnerabilidades).
+- Detalhes, prioridades (P0 a P3) e pendências em [DEVELOPMENT_REPORT.md](DEVELOPMENT_REPORT.md).
+
+### Próximo passo objetivo
+
+Com aprovação: push dos commits locais e deploy em efer.online; depois, regravar os GIFs do README com a interface nova.
+
 ## 2026-11-20 — Página do projeto e card do GitHub
 
 **Status:** página do projeto no ar em https://efer.online/projeto/brasil-tax-playground, com card no hub de efer.online.
