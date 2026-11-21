@@ -92,3 +92,9 @@ export function campo(schema: NomeSchema, nome: string): CampoContrato {
 export function camposDe(schema: NomeSchema): string[] {
   return Object.keys((contrato.schemas[schema] as { properties: object }).properties);
 }
+
+/** Descrição de um campo de saída do motor (vBC, pCBS, vIBSUF...), ou null se o motor não descreve. */
+export function rotuloSaida(campo: string): string | null {
+  const r = (contrato as { rotulosSaida?: Record<string, string> }).rotulosSaida;
+  return r?.[campo] ?? null;
+}
