@@ -4,6 +4,10 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); 
 
 ## [Não lançado]
 
+## [0.1.0] - 2026-11-21
+
+Primeira versão marcada. Tudo o que está abaixo está no ar em https://efer.online/projeto/brasil-tax-playground, com os três motores oficiais: regime regular 1.7.2 (base V0073), Simples Nacional 1.0.2 e gerador de DANFSe 1.0.0.
+
 ### Adicionado (Simples Nacional e DANFSe)
 
 - Motor oficial do Simples Nacional 1.0.2 (endpoint não assistido): formulário guiado em 5 etapas, modo desenvolvedor com exemplos, atividades (cAtivSN) e erros VSN pelos dados abertos, resolução das alíquotas no resultado.
