@@ -1,0 +1,65 @@
+{
+  "exemploId": "invalido-estrutural",
+  "gravadoEm": "2026-11-21T03:24:40.558Z",
+  "motor": {
+    "upstream": "ReceitaFederal/calculadora-rtc-regime-regular@1.7.2 (32df719)",
+    "endpoint": "POST /calculadora/observabilidade/regime-geral",
+    "versao": {
+      "ambiente": "offline",
+      "dataVersaoDb": "2026-11-09",
+      "descricaoVersaoApp": "1.7.2",
+      "descricaoVersaoDb": "Nova tabela de Classificações Tributárias (IT 2025.002 v.1.71), publicada em 30/10/2026.",
+      "versaoApp": "1.7.2",
+      "versaoDb": "V0073"
+    }
+  },
+  "requisicao": {
+    "itens": [
+      {
+        "numero": 1,
+        "ncm": "22030000",
+        "cst": "0A0",
+        "cClassTrib": "1",
+        "baseCalculo": -1
+      }
+    ],
+    "id": "exemplo-ficticio-3",
+    "versao": "1.0.0",
+    "dhFatoGerador": "2026-06-01T10:00:00-03:00",
+    "municipio": 4314902,
+    "uf": "RS"
+  },
+  "status": 200,
+  "warningDadosSimulados": null,
+  "resposta": {
+    "objetos": [
+      {
+        "nObj": 1,
+        "estadoItem": "INCONSISTENCIA_ENTRADA",
+        "erros": [
+          {
+            "type": "http://localhost/api/calculadora/observabilidade/erros?codigo=VAL-004",
+            "title": "Tamanho fora do intervalo permitido",
+            "code": "VAL-004",
+            "pointer": "#/itens/0/cClassTrib",
+            "detail": "Campo 'cClassTrib' size must be between 6 and 6, recebido: '1'"
+          },
+          {
+            "type": "http://localhost/api/calculadora/observabilidade/erros?codigo=VAL-013",
+            "title": "Valor deve ser positivo ou zero",
+            "code": "VAL-013",
+            "pointer": "#/itens/0/baseCalculo",
+            "detail": "Campo 'baseCalculo' must be greater than or equal to 0, recebido: '-1'"
+          },
+          {
+            "type": "http://localhost/api/calculadora/observabilidade/erros?codigo=VAL-009",
+            "title": "Formato inválido",
+            "code": "VAL-009",
+            "pointer": "#/itens/0/cst",
+            "detail": "Campo 'cst' Informar somente dígitos, recebido: '0A0'"
+          }
+        ]
+      }
+    ]
+  }
+}

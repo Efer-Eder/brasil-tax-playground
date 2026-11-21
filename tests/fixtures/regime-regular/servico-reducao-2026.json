@@ -1,24 +1,19 @@
 {
   "exemploId": "servico-reducao-2026",
-  "gravadoEm": "2026-11-20T22:00:35.159Z",
+  "gravadoEm": "2026-11-21T03:24:40.551Z",
   "motor": {
     "upstream": "ReceitaFederal/calculadora-rtc-regime-regular@1.7.2 (32df719)",
     "endpoint": "POST /calculadora/observabilidade/regime-geral",
     "versao": {
-      "versaoApp": "1.7.2",
-      "descricaoVersaoApp": "1.7.2",
-      "versaoDb": "V0073",
-      "descricaoVersaoDb": "Nova tabela de Classificações Tributárias (IT 2025.002 v.1.71), publicada em 30/10/2026.",
+      "ambiente": "offline",
       "dataVersaoDb": "2026-11-09",
-      "ambiente": "offline"
+      "descricaoVersaoApp": "1.7.2",
+      "descricaoVersaoDb": "Nova tabela de Classificações Tributárias (IT 2025.002 v.1.71), publicada em 30/10/2026.",
+      "versaoApp": "1.7.2",
+      "versaoDb": "V0073"
     }
   },
   "requisicao": {
-    "id": "exemplo-ficticio-4",
-    "versao": "1.0.0",
-    "dhFatoGerador": "2026-06-01T10:00:00-03:00",
-    "municipio": 4314902,
-    "uf": "RS",
     "itens": [
       {
         "numero": 1,
@@ -27,7 +22,12 @@
         "cClassTrib": "200028",
         "baseCalculo": 1200
       }
-    ]
+    ],
+    "id": "exemplo-ficticio-4",
+    "versao": "1.0.0",
+    "dhFatoGerador": "2026-06-01T10:00:00-03:00",
+    "municipio": 4314902,
+    "uf": "RS"
   },
   "status": 200,
   "warningDadosSimulados": null,
