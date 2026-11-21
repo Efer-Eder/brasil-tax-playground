@@ -119,6 +119,10 @@ Excedeu → **429** em JSON com `Retry-After: 2`. Conferido pelo caminho públic
 
 A ordem garante que o app sempre responde (8 s + 3 s < 15 s) antes de o Nginx desistir.
 
+## Dados abertos para o formulário guiado
+
+`GET /projeto/brasil-tax-playground/api/dados-abertos/<recurso>` (alias `/api/brasil-tax-playground/dados-abertos/<recurso>`) consulta só seis recursos do motor (UFs, municípios, CST de CBS/IBS e de IS, NCM e NBS), com cache em memória de 1 h a 24 h. Passa pelas mesmas zonas de rate limit da API no Nginx; não foi preciso mudar a configuração. Medido localmente com cache: p50 de 2,3 ms.
+
 ## Card do GitHub (dados ao vivo)
 
 A página do projeto mostra um resumo do repositório vindo da API REST pública do GitHub, buscado pelo servidor do app (`GET /api/github`, também em `https://efer.online/api/brasil-tax-playground/github`).

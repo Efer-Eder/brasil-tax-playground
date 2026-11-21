@@ -29,6 +29,13 @@ Regras que valem para todo código, documentação e exemplo deste repositório.
 - Sem analytics ou telemetria.
 - O app não chama `GET /versao/status` do motor, que por padrão consulta um servidor do governo (ver `docs/upstream-integration.md`).
 
+## Interface
+
+- O formulário guiado não pré-preenche nenhum valor fiscal, nem a data do fato gerador. As listas (UF, município, CST e cClassTrib) e as descrições de NCM e NBS vêm dos dados abertos do motor em uso.
+- A ajuda dos campos e os rótulos dos resultados são os textos que o motor publica no OpenAPI.
+- O BFF de dados abertos só aceita uma lista fechada de consultas, com parâmetros validados; não é um proxy genérico para o motor.
+- O histórico de simulações fica só no `localStorage` do navegador (até 20 registros), com aviso na tela para não usar dados reais de clientes.
+
 ## Instância pública (efer.online)
 
 - O app não grava as operações enviadas. Nem o app nem o motor registram o corpo das requisições.

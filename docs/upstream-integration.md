@@ -135,6 +135,21 @@ O exemplo completo de requisição/resposta está em [`docs/exemplos.md` do upst
 
 ---
 
+## Paridade com os testes do upstream (2026-11-21)
+
+`npm run test:paridade` envia cada JSON de `src/test/resources` do clone 1.7.2 (pastas `entradas/calculoscorretos`, `arredondamento`, `tpdoc`, `validacoes` e `roc`) direto ao motor e pelo caminho do app, e compara. Resultado com o motor no Docker local: 102 casos, 69 respostas idênticas, 10 erros idênticos e 23 recusados pelos dois (não são operações de regime geral). Antes da correção desta data, o app recusava 46 entradas aceitas pelo motor e alterava a resposta em 9.
+
+Comportamentos do motor observados nessa comparação:
+
+- O endpoint de observabilidade devolve erros de campo **por item**, com HTTP 200 (`estadoItem: INCONSISTENCIA_ENTRADA` e códigos `VAL-xxx`), em vez de recusar a operação inteira.
+- A lista de erros de validação vem **em ordem não determinística**: duas chamadas iguais podem trazer os erros em ordens diferentes.
+- O ProblemDetail dos erros HTTP traz `timestamp`.
+- `dhFatoGerador` é opcional no contrato; o motor aceita o campo obsoleto `dataHoraEmissao` no lugar. Campos opcionais aceitam `null`.
+
+## Contrato versionado
+
+`lib/tax-engine/contrato/regime-regular.openapi.json` guarda os schemas de entrada e os rótulos dos campos de saída tirados do OpenAPI do motor (`node scripts/contrato/extrair-openapi.mjs <url>`). O teste `tests/contract/contrato-openapi.test.ts` compara esse retrato com o motor rodando; se o upstream mudar o contrato, o teste falha.
+
 ## Como este projeto acompanha mudanças do upstream
 
 1. Cada adapter declara a tag/commit consultado (`upstreamReferencia`).
