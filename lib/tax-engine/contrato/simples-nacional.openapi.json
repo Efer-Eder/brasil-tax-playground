@@ -1,0 +1,358 @@
+{
+  "origem": "GET /api-docs do motor calculadora-rtc-simples-nacional (OpenAPI 3.1.0)",
+  "motor": {
+    "versaoApp": "1.0.2",
+    "versaoDb": "V0073",
+    "dataVersaoDb": "2026-11-09"
+  },
+  "schemas": {
+    "OperacaoSimplesNaoAssistidaInput": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Identificador da operação",
+          "example": "op-1"
+        },
+        "versao": {
+          "type": "string",
+          "description": "Versão do payload",
+          "example": "3.0.0"
+        },
+        "data": {
+          "type": "string",
+          "description": "Data do fato gerador (YYYY-MM-DD). Rege todas as vigências",
+          "example": "2027-03-15"
+        },
+        "tpDoc": {
+          "type": "string",
+          "description": "Tipo de documento fiscal: 55, 65, 57, 67, 63, 93 ou 62 (documentos com CRT) ou 91 (NFS-e). Habilitação, vocabulário do regime, precisão da alíquota, máximo de itens e Imposto Seletivo parametrizados em banco por documento",
+          "example": "91"
+        },
+        "CRT": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Documentos com CRT: obrigatório, 1 (Simples), 2 (excesso de sublimite), 3 (regime normal) ou 4 (MEI). Proibido na NFS-e",
+          "example": "1"
+        },
+        "tpRegimeIBSCBS": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Documentos com CRT: opcional, 1 (optou pelo regime regular do IBS e da CBS: SOMENTE_RECEITA com CRT 1 ou 2) ou 2 (opção pelo Simples pendente: PENDENTE com CRT 3). Proibido na NFS-e",
+          "example": "2"
+        },
+        "opSimpNac": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "NFS-e: obrigatório, 1 (não optante), 2 (MEI), 3 (ME/EPP) ou 4 (opção pendente). Proibido nos documentos com CRT",
+          "example": "3"
+        },
+        "regApIBSCBSSN": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "NFS-e: 1 (IBS e CBS pelo Simples), 2 (CBS pelo Simples e IBS pelo regime regular) ou 3 (os dois pelo regime regular). Obrigatório com opSimpNac 3 ou 4; proibido com 1 ou 2 (VSN-031)",
+          "example": "1"
+        },
+        "regApTribSN": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "NFS-e: 1 (tributos federais e ISS pelo Simples), 2 (federais pelo Simples e ISS fora dele) ou 3 (federais e ISS fora). Obrigatório com opSimpNac 3 ou 4; proibido com 1 ou 2 (VSN-032). Não muda o regime do IBS e da CBS: só entra na escolha do par de alíquotas",
+          "example": "1"
+        },
+        "tpEnteGov": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Tipo de ente governamental adquirente (compra governamental): 1 (União), 2 (Estado), 3 (Distrito Federal) ou 4 (Município). Vale para a operação inteira",
+          "example": "2"
+        },
+        "aliquotasEfetivas": {
+          "type": "null",
+          "$ref": "#/components/schemas/AliquotasEfetivasInput",
+          "description": "Linha de alíquotas efetivas do contribuinte no período (pontos percentuais, texto). Obrigatória, exceto no regime SOMENTE_RECEITA (VSN-039)"
+        },
+        "itens": {
+          "type": "array",
+          "description": "Itens da operação: 1 ou mais; na NFS-e, exatamente 1 (VSN-034)",
+          "items": {
+            "$ref": "#/components/schemas/ItemSimplesUnificadoInput"
+          }
+        }
+      }
+    },
+    "ItemSimplesUnificadoInput": {
+      "type": "object",
+      "properties": {
+        "numero": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Número do item na operação (obrigatório, VSN-010)",
+          "example": 1
+        },
+        "cAtivSN": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Código oficial de Atividade do Simples Nacional (na DPS da NFS-e o campo se chama cAtvSN). Um único dígito é completado com zero à esquerda (\"7\" ⇒ \"07\"). Ausente, desconhecido, fora de vigência ou não admitido no tpDoc: o item não é calculado (estado NAO_CALCULADO), sem erro. Não exigido no regime SOMENTE_RECEITA",
+          "example": "12"
+        },
+        "cClassTrib": {
+          "type": "string",
+          "description": "Código de Classificação Tributária do IBS e da CBS (6 dígitos). Obrigatório: resolve internamente o Tipo de Receita Bruta do Simples Nacional (tpRBSN)",
+          "example": "000001"
+        },
+        "nbs": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Código da Nomenclatura Brasileira de Serviços. A obrigatoriedade e a validação dependem da classificação tributária e do tipo de documento; não pode ser informado junto com NCM",
+          "example": "114051000"
+        },
+        "ncm": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Código da Nomenclatura Comum do Mercosul. A obrigatoriedade e a validação dependem da classificação tributária e do tipo de documento; não pode ser informado junto com NBS",
+          "example": "22030000"
+        },
+        "baseCalculo": {
+          "type": "string",
+          "description": "Base de cálculo do item, formato 13v2. Nos documentos com CRT: vProd + vFrete + vSeg + vOutro - vDesc, sem o vIS. Na NFS-e: o vReceitaBrutaSN (vServ - descIncond - vCalcAjusteBCIBSCBS - vCalcAjusteBCISSQN no profissional parceiro), calculado por quem chama",
+          "example": "10000.00"
+        },
+        "valorImpostoSeletivo": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Valor do Imposto Seletivo já calculado (vIS), formato 13v2. Documentos com CRT: obrigatório (\"0.00\" quando não há IS), repassado na saída. NFS-e: ausente ou zero (a NFS-e não tem IS; outro valor ⇒ VSN-035)",
+          "example": "0.00"
+        },
+        "tribISSQN": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "NFS-e: tributação do ISSQN — 1 operação tributável; 2 imunidade; 3 exportação de serviço; 4 não incidência. Obrigatório nas atividades com ISS no Simples (07, 09, 10, 12, 13 e 14) quando o regime calcula tributos (VSN-036). Valores 2, 3 e 4 levam ao par sem redistribuição do ISS",
+          "example": "1"
+        },
+        "tpRetISSQN": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "NFS-e: retenção do ISSQN — 1 não retido; 2 retido pelo tomador; 3 retido pelo intermediário. Obrigatório com tribISSQN = 1 nas mesmas atividades (VSN-037); com tribISSQN 2, 3 ou 4 é desconsiderado, com aviso (E0580). Retenção (2 ou 3) leva ao par sem redistribuição (Cosit 298/2019)",
+          "example": "1"
+        },
+        "tpBM": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "NFS-e: tipo de benefício municipal do ISS — 1 isenção; 2 redução da base em %; 3 redução da base em R$; 4 alíquota diferenciada. Opcional: ausente = sem benefício municipal. Fora do domínio ⇒ VSN-038. Só vale nas atividades 12 e 13 (E0536); nas demais é desconsiderado, com aviso. Isenção (1) leva ao par sem redistribuição",
+          "example": "1"
+        }
+      }
+    },
+    "AliquotasEfetivasInput": {
+      "type": "object",
+      "properties": {
+        "fatorR": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "true = fator \"r\" igual ou superior a 28% (Anexo III para a atividade 09); false = inferior (Anexo V). Exigido quando algum item tem a atividade 09 (VSN-040)",
+          "example": false
+        },
+        "impedimentoSublimite": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "true = impedido de recolher IBS e ISS pelo Simples por exceder o sublimite (o IBS da linha vem nulo e os anexos III a V usam o par sem redistribuição do ISS). Padrão false",
+          "example": false
+        },
+        "anexoI": {
+          "type": "null",
+          "$ref": "#/components/schemas/AnexoParUnicoInput",
+          "description": "Alíquotas do Anexo I"
+        },
+        "anexoII": {
+          "type": "null",
+          "$ref": "#/components/schemas/AnexoParUnicoInput",
+          "description": "Alíquotas do Anexo II"
+        },
+        "anexoIII": {
+          "type": "null",
+          "$ref": "#/components/schemas/AnexoComIssInput",
+          "description": "Alíquotas do Anexo III, com o par sem redistribuição do ISS"
+        },
+        "anexoIV": {
+          "type": "null",
+          "$ref": "#/components/schemas/AnexoComIssInput",
+          "description": "Alíquotas do Anexo IV, com o par sem redistribuição do ISS"
+        },
+        "anexoV": {
+          "type": "null",
+          "$ref": "#/components/schemas/AnexoComIssInput",
+          "description": "Alíquotas do Anexo V, com o par sem redistribuição do ISS"
+        }
+      }
+    },
+    "AnexoComIssInput": {
+      "type": "object",
+      "properties": {
+        "pCBSSN": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Alíquota efetiva da CBS com redistribuição do ISS, em pontos percentuais (texto)",
+          "example": "2.3874"
+        },
+        "pIBSSN": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Alíquota efetiva do IBS com redistribuição do ISS, em pontos percentuais (texto); nula com impedimento pelo sublimite",
+          "example": "0.0263"
+        },
+        "semRedistribuicaoISS": {
+          "type": "null",
+          "$ref": "#/components/schemas/ParAliquotasInput",
+          "description": "Par sem redistribuição do ISS (usado quando o ISS não entra no cálculo do Simples). Ausente: vale o par com redistribuição, com aviso (os dois coincidem quando o ISS não passa do teto)"
+        }
+      }
+    },
+    "AnexoParUnicoInput": {
+      "type": "object",
+      "properties": {
+        "pCBSSN": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Alíquota efetiva da CBS, em pontos percentuais (texto)",
+          "example": "1.1612"
+        },
+        "pIBSSN": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Alíquota efetiva do IBS, em pontos percentuais (texto); nula com impedimento pelo sublimite",
+          "example": "0.0129"
+        }
+      }
+    },
+    "ParAliquotasInput": {
+      "type": "object",
+      "properties": {
+        "pCBSSN": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Alíquota efetiva da CBS, em pontos percentuais (texto)",
+          "example": "2.3591"
+        },
+        "pIBSSN": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Alíquota efetiva do IBS, em pontos percentuais (texto); nula com impedimento pelo sublimite",
+          "example": "0.0260"
+        }
+      }
+    }
+  },
+  "rotulosSaida": {
+    "admissivelNoDocumento": "Indica se a atividade é admissível no documento fiscal informado no query param tpDoc. Presente SOMENTE quando tpDoc foi informado: true se e somente se o tpDoc está em tpDocsAdmissiveis (whitelist — sem vínculo vigente, não há permissão).",
+    "ambiente": "Ambiente da aplicação",
+    "anexoAplicado": "Anexo aplicado ao item, em numeral romano (I..V); null quando a atividade não possui anexo (código 90) ou não foi resolvida",
+    "anexoComFatorR": "Anexo (romano puro) quando o fator r é IGUAL OU SUPERIOR a 28% (fator r atingido). Para a atividade 09 é o Anexo III (LC 123/2006, art. 18, § 5º-J). Null quando a atividade não depende do fator r",
+    "anexoSemFatorR": "Anexo (romano puro) quando o fator r é INFERIOR a 28%, ou quando a atividade não depende do fator r (é então o único anexo). Para a atividade 09 é o Anexo V (LC 123/2006, art. 18, § 5º-M). Null na linha do código 90 (Operações não Tributáveis), que não possui anexo de apuração",
+    "anexosFaltantes": "Anexos do conjunto possível da atividade que NÃO estão na configuração informada, ordenados por romano (I..V). Nunca null; [] quando nada falta.",
+    "aplicacaoAtualizada": "Indica se a versão da aplicação local está atualizada em relação à remota",
+    "arquivoDb": "Arquivo do banco de dados em uso: calculadora-pro.db (vigências corretas) ou calculadora-nonpro.db (vigências retroativas)",
+    "avisos": "Avisos do item, que não bloqueiam o cálculo (ex.: campo do ISS desconsiderado; par sem redistribuição ausente na linha). Lista vazia quando não há",
+    "cAtivSN": "Código de atividade do item, normalizado (sem espaços; um único dígito ganha o zero à esquerda: \"7\" ⇒ \"07\")",
+    "cbs": "Memória de cálculo da CBS",
+    "codigo": "Código do motivo. REGIME_SOMENTE_RECEITA: o optante apura o IBS e a CBS pelo regime regular; CATIVSN_AUSENTE: cAtivSN não informado; CATIVSN_DESCONHECIDO: cAtivSN inexistente ou fora de vigência; CATIVSN_INADMISSIVEL_NO_DOCUMENTO: atividade não admitida no tipo de documento; ANEXO_SEM_ALIQUOTA_CBS: a Tabela de Alíquotas Efetivas do Simples Nacional não traz a CBS do anexo (só no cálculo assistido)",
+    "compativelComClassTrib": "Indica se a atividade é compatível com a classificação tributária informada no query param cClassTrib. Presente SOMENTE quando cClassTrib foi informado: false quando o tpRBSN da classificação declara receita vedada para atividades não tributáveis (espelho da regra UB14-90 da NT 2026.005, o mesmo erro VSN-023 do cálculo).",
+    "CRT": "Código de Regime Tributário do emitente (documentos com CRT)",
+    "data": "Data do fato gerador",
+    "dataDbAtualizada": "Indica se a data do banco de dados local está atualizada em relação à remota",
+    "dataDbLocal": "Data do banco de dados local",
+    "dataDbRemota": "Data do banco de dados remoto (nula quando indisponível)",
+    "dataVersaoDb": "Data da versão do banco de dados",
+    "dbAtualizada": "Indica se a versão do banco de dados local está atualizada em relação à remota",
+    "descricao": "Descrição do motivo, pronta para exibição ao usuário",
+    "descricaoVersaoDb": "Descrição da versão do banco de dados",
+    "disponivel": "Indica se a atividade pode ser selecionada com os filtros informados na consulta (anexos configurados, documento fiscal e classificação tributária). A atividade sem anexo é disponível pelo eixo dos anexos.",
+    "ibs": "Memória de cálculo do IBS. Suprimida para CRT=2",
+    "IS": "Imposto Seletivo (repasse do valor recebido, sem recálculo)",
+    "memoriaCalculo": "Memória de cálculo da CBS e do IBS. Suprimida para item NAO_CALCULADO",
+    "modoFatorR": "Estado da decisão de Fator R da atividade, dada a configuração de anexos informada",
+    "motivo": "Desfecho da resolução: RESOLVIDA, ATIVIDADE_SEM_ANEXO (código 90, alíquotas zero), ATIVIDADE_DESCONHECIDA (cAtivSN nulo/desconhecido/fora de vigência: item NAO_CALCULADO), ATIVIDADE_INADMISSIVEL_NO_DOCUMENTO (item NAO_CALCULADO), ANEXO_SEM_ALIQUOTA (a linha não tem a CBS do par), FATOR_R_AUSENTE (VSN-040) ou ITEM_NAO_IMPLEMENTADO (VSN-027)",
+    "motivoEstado": "Por que o IBS e a CBS do item não foram calculados: presente somente quando estadoItem = NAO_CALCULADO",
+    "numero": "Número do item na operação",
+    "opSimpNac": "Situação do prestador perante o Simples Nacional (NFS-e)",
+    "ordem": "Ordem de exibição (1..15; a 15 é a linha do código 90)",
+    "pCBSSN": "Alíquota efetiva de CBS do par aplicado, com a precisão integral recebida ou lida (pontos percentuais, texto), antes da compra governamental e do arredondamento do leiaute; \"0\" para atividade sem anexo; null quando não resolvida",
+    "pIBSSN": "Alíquota efetiva de IBS do par aplicado, com a precisão integral recebida ou lida (pontos percentuais, texto), antes da compra governamental e do arredondamento do leiaute; \"0\" para atividade sem anexo; null quando não resolvida ou quando a linha não traz IBS (impedimento pelo sublimite)",
+    "regApIBSCBSSN": "Regime de apuração do IBS e da CBS pelo Simples Nacional (NFS-e)",
+    "regApTribSN": "Regime de apuração dos tributos federais e do ISS pelo Simples Nacional (NFS-e)",
+    "regimeApuracao": "Regime de apuração (código neutro) a que os campos de regime do documento levam: SN_PLENO, SN_SUBLIMITE, PENDENTE, PENDENTE_SUBLIMITE ou SOMENTE_RECEITA (optante pelo regime regular do IBS e da CBS: os itens saem NAO_CALCULADO, só com a receita bruta). Ausente no endpoint clássico",
+    "regraAliquota": "Regra que escolheu o par: DOCUMENTO, ATIVIDADE_NAO_TRIBUTADA, ANEXO_SEM_ISS, ISS_FORA_DO_SIMPLES, ATIVIDADE_SEM_ISS, ISS_NAO_INCIDE, ISENCAO_MUNICIPAL, ISS_RETIDO ou PADRAO; null quando a atividade não foi resolvida",
+    "resolucaoAliquotas": "Resolução das alíquotas efetivas por item. Ausente no endpoint clássico e no regime SOMENTE_RECEITA",
+    "rotuloAnexo": "Rótulo informativo completo do anexo (badge), com ressalvas",
+    "rotuloCurtoAnexo": "Rótulo curto do anexo (badge), apenas o(s) numeral(is) romano(s), sem ressalvas",
+    "sujeitaFatorR": "Indica se a atividade depende do Fator R (derivado: anexoComFatorR != null)",
+    "tipoAliquota": "Tipo da alíquota aplicada: SEM_ALIQUOTA (código 90, zero), PAR_UNICO (anexos I e II), SEM_REDISTRIBUICAO ou COM_REDISTRIBUICAO do ISS (anexos III, IV e V); null quando o par não foi escolhido (atividade desconhecida ou não admitida no documento)",
+    "totalIs": "Soma de IS.valor dos itens calculados (conveniência do projeto: o IS não integra o evento da NT)",
+    "totalItem": "Total do item: vIBSSN + vCBSSN + IS.valor (somente os valores devidos; os pendentes/suspensos ficam fora)",
+    "totalTributos": "vIBSSNtot + vCBSSNtot + totalIs (somente os valores devidos)",
+    "tpDoc": "Tipo de documento fiscal eletrônico da operação",
+    "tpDocsAdmissiveis": "Tipos de documento fiscal (TPDF_TIPO: \"55\", \"65\", \"91\", ...) com vínculo vigente na data na associativa da atividade (whitelist). SEMPRE presente, tenha ou não sido informado o tpDoc na consulta. Lista vazia = nenhum documento publicado para a atividade — inadmissível em todos.",
+    "tpEnteGov": "Tipo de ente governamental adquirente (compra governamental), quando informado",
+    "tpRBSN": "Tipo de Receita Bruta do Simples Nacional, resolvido do cClassTrib (NT 2026.005): 0, 1, 2, 3, 4, 5 ou 9",
+    "tpRBSNDescricao": "Descrição do Tipo de Receita Bruta do Simples Nacional (texto oficial do leiaute do evento da NT 2026.005; ex.: \"Receita bruta - interna\"), vinda da tabela de tipos de receita bruta vigente na data do fato gerador",
+    "tpRegimeIBSCBS": "Tipo de regime de apuração do IBS/CBS, quando informado (documentos com CRT)",
+    "valor": "Valor do Imposto Seletivo",
+    "vBC": "Soma de vBC (base de cálculo de IBS/CBS) dos itens CALCULADO. Itens NAO_CALCULADO não têm vBC e ficam fora desta soma; suprimido quando nenhum item o tem",
+    "vCBSPendSusp": "Valor de CBS pendente/suspenso (exportação indireta ou CRT=3 + tpRegimeIBSCBS=2)",
+    "vCBSSN": "Valor devido de CBS do Simples Nacional",
+    "vCBSSNtot": "Soma de vCBSSN dos itens calculados",
+    "vCBSSNtotPendSusp": "Soma de vCBSPendSusp dos itens calculados",
+    "versaoAplicacaoLocal": "Versão da aplicação local",
+    "versaoAplicacaoRemota": "Versão da aplicação remota (nula quando indisponível)",
+    "versaoApp": "Versão do aplicativo",
+    "versaoDb": "Versão do banco de dados",
+    "versaoDbLocal": "Versão do banco de dados local",
+    "versaoDbRemota": "Versão do banco de dados remoto (nula quando indisponível)",
+    "vIBSPendSusp": "Valor de IBS pendente/suspenso (exportação indireta ou CRT=3 + tpRegimeIBSCBS=2). Suprimido para CRT=2",
+    "vIBSSN": "Valor devido de IBS do Simples Nacional. Suprimido para CRT=2",
+    "vIBSSNtot": "Soma de vIBSSN dos itens calculados. Suprimido quando nenhum item gera IBS (CRT=2)",
+    "vIBSSNtotPendSusp": "Soma de vIBSPendSusp dos itens calculados. Suprimido quando nenhum item gera IBS (CRT=2)",
+    "vRBSNitem": "Receita bruta do Simples Nacional do item (NT 2026.005): a baseCalculo, ou zero quando tpRBSN=0. O valorImpostoSeletivo NÃO compõe a receita bruta (parametrização por vigência, atualmente desligada em todas as vigências — divergência deliberada com a fórmula do campo P26 da NT)",
+    "vRBSNtot": "Soma de vRBSNitem dos itens CALCULADO e NAO_CALCULADO (NT 2026.005)"
+  }
+}

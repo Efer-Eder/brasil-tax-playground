@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { readRegimeRegularConfig } from "./config";
+import { readEngineConfig, type MotorConfiguravel } from "./config";
 
 /**
  * Consulta aos dados abertos do motor (listas de UF, município, CST,
@@ -13,12 +13,21 @@ import { readRegimeRegularConfig } from "./config";
 const data = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use AAAA-MM-DD");
 
 interface Recurso {
-  params: z.ZodType<Record<string, string>>;
-  caminho: (p: Record<string, string>) => string;
+  /** Motor que responde a consulta (padrão: regime regular). */
+  motor?: MotorConfiguravel;
+  params: z.ZodType<Record<string, string | undefined>>;
+  caminho: (p: Record<string, string | undefined>) => string;
   ttlMs: number;
 }
 
 const HORA = 60 * 60 * 1000;
+
+/** Query string só com os parâmetros informados, na ordem do schema. */
+function consulta(p: Record<string, string | undefined>): string {
+  const q = new URLSearchParams();
+  for (const [k, v] of Object.entries(p)) if (v) q.set(k, v);
+  return q.toString();
+}
 
 export const RECURSOS = {
   ufs: {
@@ -50,6 +59,24 @@ export const RECURSOS = {
     params: z.object({ nbs: z.string().regex(/^\d{9}$/, "NBS com 9 dígitos"), data }),
     caminho: (p) => `/calculadora/dados-abertos/nbs?nbs=${p.nbs}&data=${p.data}`,
     ttlMs: HORA,
+  },
+  // Simples Nacional: atividades (cAtivSN) vigentes na data, com os filtros
+  // por documento e por cClassTrib que o próprio motor oferece.
+  "atividades-sn": {
+    motor: "simples-nacional",
+    params: z.object({
+      data,
+      tpDoc: z.string().regex(/^\d{2}$/, "tpDoc com 2 dígitos").optional(),
+      cClassTrib: z.string().regex(/^\d{6}$/, "cClassTrib com 6 dígitos").optional(),
+    }),
+    caminho: (p) => `/calculadora/simples-nacional/atividades?${consulta(p)}`,
+    ttlMs: HORA,
+  },
+  "erro-sn": {
+    motor: "simples-nacional",
+    params: z.object({ codigo: z.string().regex(/^VSN-\d{3}$/, "Código no formato VSN-000") }),
+    caminho: (p) => `/calculadora/observabilidade/simples-nacional/erros?codigo=${p.codigo}`,
+    ttlMs: 24 * HORA,
   },
 } satisfies Record<string, Recurso>;
 
@@ -87,12 +114,13 @@ export async function consultarDadosAbertos(
     return { ok: false, status: 422, motivo: p.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ") };
   }
 
-  const config = readRegimeRegularConfig(deps.env ?? process.env);
+  const config = readEngineConfig(recurso.motor ?? "regime-regular", deps.env ?? process.env);
   if (!config.ok) return { ok: false, status: 503, motivo: config.motivo };
 
   const caminho = recurso.caminho(p.data);
   const agora = (deps.agora ?? Date.now)();
-  const salvo = cache.get(caminho);
+  const chave = `${recurso.motor ?? "regime-regular"}:${caminho}`;
+  const salvo = cache.get(chave);
   if (salvo && salvo.expira > agora) return { ok: true, status: 200, dados: salvo.dados };
 
   let res: Response;
@@ -117,6 +145,6 @@ export async function consultarDadosAbertos(
   }
 
   if (cache.size >= MAX_CACHE) cache.delete(cache.keys().next().value as string);
-  cache.set(caminho, { dados: corpo, expira: agora + recurso.ttlMs });
+  cache.set(chave, { dados: corpo, expira: agora + recurso.ttlMs });
   return { ok: true, status: 200, dados: corpo };
 }
