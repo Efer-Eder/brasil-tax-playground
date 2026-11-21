@@ -3,12 +3,13 @@
  * Content-Length quando ele vem, e corta a leitura do fluxo assim que passar
  * do teto (cliente que mente o tamanho ou usa chunked).
  */
-export type CorpoLido = { ok: true; texto: string } | { ok: false; motivo: "grande-demais" };
+/** `bytes` traz o corpo como chegou (para repassar sem recodificar, ex.: XML em ISO-8859-1). */
+export type CorpoLido = { ok: true; texto: string; bytes: Uint8Array } | { ok: false; motivo: "grande-demais" };
 
 export async function lerCorpoLimitado(request: Request, maxBytes: number): Promise<CorpoLido> {
   const declarado = Number(request.headers.get("content-length"));
   if (Number.isFinite(declarado) && declarado > maxBytes) return { ok: false, motivo: "grande-demais" };
-  if (!request.body) return { ok: true, texto: "" };
+  if (!request.body) return { ok: true, texto: "", bytes: new Uint8Array(0) };
 
   const leitor = request.body.getReader();
   const partes: Uint8Array[] = [];
@@ -29,5 +30,5 @@ export async function lerCorpoLimitado(request: Request, maxBytes: number): Prom
     tudo.set(p, pos);
     pos += p.byteLength;
   }
-  return { ok: true, texto: new TextDecoder().decode(tudo) };
+  return { ok: true, texto: new TextDecoder().decode(tudo), bytes: tudo };
 }

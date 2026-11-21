@@ -5,7 +5,7 @@ import { simulacaoPublica, statusPublico } from "@/lib/http/publico";
 describe("lerCorpoLimitado", () => {
   it("reads a body within the limit", async () => {
     const r = await lerCorpoLimitado(new Request("http://x", { method: "POST", body: '{"a":1}' }), 100);
-    expect(r).toEqual({ ok: true, texto: '{"a":1}' });
+    expect(r).toMatchObject({ ok: true, texto: '{"a":1}' });
   });
 
   it("refuses by Content-Length before reading", async () => {
@@ -33,7 +33,7 @@ describe("lerCorpoLimitado", () => {
       },
     });
     const req = new Request("http://x", { method: "POST", body: stream, duplex: "half" } as RequestInit);
-    expect(await lerCorpoLimitado(req, 1000)).toEqual({ ok: true, texto: '{"t":"ção"}' });
+    expect(await lerCorpoLimitado(req, 1000)).toMatchObject({ ok: true, texto: '{"t":"ção"}' });
   });
 });
 

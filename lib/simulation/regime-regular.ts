@@ -1,8 +1,7 @@
-import {
-  createRegimeRegularHttpClient,
-  type RegimeRegularAdapter,
-} from "@/lib/tax-engine/adapters/regime-regular";
-import { readRegimeRegularConfig } from "@/lib/tax-engine/config";
+import { createRegimeRegularHttpClient } from "@/lib/tax-engine/adapters/regime-regular";
+import { createSimplesNacionalHttpClient } from "@/lib/tax-engine/adapters/simples-nacional";
+import { readEngineConfig } from "@/lib/tax-engine/config";
+import type { EngineCallResult } from "@/lib/tax-engine/http";
 import {
   EngineContractError,
   EngineHttpError,
@@ -13,6 +12,20 @@ import {
   type ObservabilidadeResposta,
 } from "@/lib/tax-engine/schemas/regime-regular";
 import type { EngineVersion } from "@/lib/tax-engine/types";
+
+/** Motores de cálculo com observabilidade (o DANFSe gera PDF e tem rota própria). */
+export type MotorCalculo = "regime-regular" | "simples-nacional";
+
+/** O que a simulação precisa de um cliente de motor de cálculo. */
+export interface AdapterCalculo {
+  getVersao(signal?: AbortSignal): Promise<EngineVersion>;
+  calcularComObservabilidade(operacao: string, signal?: AbortSignal): Promise<EngineCallResult<ObservabilidadeResposta>>;
+}
+
+const CLIENTES: Record<MotorCalculo, (config: { baseUrl: string; timeoutMs: number }) => AdapterCalculo> = {
+  "regime-regular": createRegimeRegularHttpClient,
+  "simples-nacional": createSimplesNacionalHttpClient,
+};
 import { FilaCheiaError, type LimitadorConcorrencia } from "./limites";
 
 /**
@@ -25,6 +38,8 @@ export type SimulacaoResultado =
   | {
       ok: true;
       httpStatus: 200;
+      /** Motor que calculou (ausente em registros antigos do histórico = regime regular). */
+      engine?: MotorCalculo;
       /** A operação recebida (JSON do corpo original; o motor recebe o texto sem alteração). */
       requisicao: Record<string, unknown>;
       resposta: ObservabilidadeResposta;
@@ -51,7 +66,7 @@ export type SimulacaoErro =
 
 export interface SimularDeps {
   env?: Record<string, string | undefined>;
-  createClient?: (config: { baseUrl: string; timeoutMs: number }) => RegimeRegularAdapter;
+  createClient?: (config: { baseUrl: string; timeoutMs: number }) => AdapterCalculo;
   now?: () => Date;
   /** Teto de itens por operação (instância pública). */
   maxItens?: number | null;
@@ -72,7 +87,7 @@ export function limparCacheVersao() {
 }
 
 async function obterVersao(
-  client: RegimeRegularAdapter,
+  client: AdapterCalculo,
   baseUrl: string,
   ttlMs: number | undefined,
   agora: number,
@@ -86,8 +101,25 @@ async function obterVersao(
   return versao;
 }
 
-/** Recebe o corpo cru da requisição (texto) e executa a simulação. */
-export async function simularRegimeRegular(rawBody: string, deps: SimularDeps = {}): Promise<SimulacaoResultado> {
+/** Recebe o corpo cru da requisição (texto) e executa a simulação no motor de regime regular. */
+export function simularRegimeRegular(rawBody: string, deps: SimularDeps = {}): Promise<SimulacaoResultado> {
+  return simularNoMotor("regime-regular", rawBody, deps);
+}
+
+/** O mesmo caminho, no motor do Simples Nacional (endpoint não assistido). */
+export function simularSimplesNacional(rawBody: string, deps: SimularDeps = {}): Promise<SimulacaoResultado> {
+  return simularNoMotor("simples-nacional", rawBody, deps);
+}
+
+/**
+ * Pipeline comum: confere o envelope, aplica o teto de itens e a fila, envia o
+ * texto original ao motor e devolve a resposta sem transformação.
+ */
+export async function simularNoMotor(
+  engine: MotorCalculo,
+  rawBody: string,
+  deps: SimularDeps = {},
+): Promise<SimulacaoResultado> {
   let json: unknown;
   try {
     json = JSON.parse(rawBody);
@@ -117,12 +149,12 @@ export async function simularRegimeRegular(rawBody: string, deps: SimularDeps = 
     });
   }
 
-  const config = readRegimeRegularConfig(deps.env ?? process.env);
+  const config = readEngineConfig(engine, deps.env ?? process.env);
   if (!config.ok) {
     return falha(503, { tipo: "nao-configurado", mensagem: config.motivo });
   }
 
-  const client = (deps.createClient ?? createRegimeRegularHttpClient)(config.config);
+  const client = (deps.createClient ?? CLIENTES[engine])(config.config);
 
   try {
     const executar = <T>(tarefa: () => Promise<T>) => (deps.limitador ? deps.limitador.executar(tarefa) : tarefa());
@@ -138,6 +170,7 @@ export async function simularRegimeRegular(rawBody: string, deps: SimularDeps = 
     return {
       ok: true,
       httpStatus: 200,
+      engine,
       requisicao: parsed.data as Record<string, unknown>,
       resposta: resultado.data,
       warningDadosSimulados: resultado.warningDadosSimulados,

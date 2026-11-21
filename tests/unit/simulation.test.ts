@@ -75,6 +75,7 @@ describe("simularRegimeRegular", () => {
     expect(r).toEqual({
       ok: true,
       httpStatus: 200,
+      engine: "regime-regular",
       requisicao: OPERACAO,
       resposta: { objetos: [{ nObj: 1, estadoItem: "CALCULADO", qualquer: { coisa: "1.00" } }] },
       warningDadosSimulados: null,

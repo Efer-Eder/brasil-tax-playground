@@ -1,46 +1,5 @@
-import { CORS_HEADERS } from "@/lib/cors";
-import { lerCorpoLimitado } from "@/lib/http/corpo-limitado";
-import { simulacaoPublica } from "@/lib/http/publico";
-import { LimitadorConcorrencia, lerLimites } from "@/lib/simulation/limites";
-import { simularRegimeRegular } from "@/lib/simulation/regime-regular";
-import { readRegimeRegularConfig } from "@/lib/tax-engine/config";
+import { criarRotaSimulacao, opcoesCors } from "@/lib/http/rota-simulacao";
 
-/**
- * Limite do corpo aceito pelo BFF. Mesmo valor de
- * `spring.http.codecs.max-in-memory-size` no perfil offline do upstream.
- */
-const MAX_BODY_BYTES = 500 * 1024;
-
-const limites = lerLimites();
-const limitador = new LimitadorConcorrencia(limites);
-
-/**
- * BFF / API pública: confere o envelope e repassa a operação, sem reescrever,
- * ao motor oficial configurado em REGIME_REGULAR_ENGINE_URL. Nada é armazenado.
- */
-export async function POST(request: Request) {
-  const corpo = await lerCorpoLimitado(request, MAX_BODY_BYTES);
-  if (!corpo.ok) {
-    return Response.json(
-      { ok: false, httpStatus: 413, erro: { tipo: "json-invalido", mensagem: "Corpo maior que 500 KB." } },
-      { status: 413, headers: CORS_HEADERS },
-    );
-  }
-
-  const resultado = await simularRegimeRegular(corpo.texto, {
-    maxItens: limites.maxItens,
-    limitador,
-    cacheVersaoMs: 60_000,
-  });
-  const config = readRegimeRegularConfig();
-  const headers: Record<string, string> = { ...CORS_HEADERS, "Cache-Control": "no-store" };
-  if (!resultado.ok && resultado.erro.tipo === "ocupado") headers["Retry-After"] = "5";
-  return Response.json(simulacaoPublica(resultado, config.ok ? config.config.baseUrl : undefined), {
-    status: resultado.httpStatus,
-    headers,
-  });
-}
-
-export function OPTIONS() {
-  return new Response(null, { status: 204, headers: CORS_HEADERS });
-}
+/** BFF / API pública do motor de regime regular (REGIME_REGULAR_ENGINE_URL). */
+export const POST = criarRotaSimulacao("regime-regular");
+export const OPTIONS = opcoesCors;

@@ -1,10 +1,4 @@
-import type { z } from "zod";
-import type { RegimeRegularConfig } from "../config";
-import {
-  EngineContractError,
-  EngineHttpError,
-  EngineUnavailableError,
-} from "../errors";
+import { chamarMotorJson, type EngineCallResult, type HttpClientOptions } from "../http";
 import {
   observabilidadeRespostaSchema,
   versaoSchema,
@@ -12,6 +6,8 @@ import {
   type OperacaoInput,
 } from "../schemas/regime-regular";
 import type { EngineDescriptor, EngineVersion } from "../types";
+
+export type { EngineCallResult, HttpClientOptions } from "../http";
 
 export const regimeRegularDescriptor: EngineDescriptor = {
   id: "regime-regular",
@@ -22,18 +18,6 @@ export const regimeRegularDescriptor: EngineDescriptor = {
   upstreamReferencia: "1.7.2 (f1eebd7)",
   stage: "em-integracao",
 };
-
-/** Resposta crua do motor, preservada para o inspetor técnico. */
-export interface EngineCallResult<T> {
-  data: T;
-  status: number;
-  /**
-   * Valor cru do header `x-warning-dados-simulados`, ou null se ausente.
-   * No upstream 1.7.2 é um código numérico do enum `TipoWarningDadosSimulados`
-   * (ex.: "6" = CASO_CALCULOS_SIMULADOS). Repassado sem interpretação.
-   */
-  warningDadosSimulados: string | null;
-}
 
 /**
  * Contrato que a UI/BFF usa para falar com o motor de regime regular.
@@ -51,10 +35,6 @@ export interface RegimeRegularAdapter {
   ): Promise<EngineCallResult<ObservabilidadeResposta>>;
 }
 
-export interface HttpClientOptions extends RegimeRegularConfig {
-  fetch?: typeof fetch;
-}
-
 /** Caminhos relativos à URL base (que já inclui o context-path `/api`). */
 export const REGIME_REGULAR_PATHS = {
   versao: "/calculadora/dados-abertos/versao",
@@ -62,81 +42,19 @@ export const REGIME_REGULAR_PATHS = {
 } as const;
 
 const ENGINE = "regime-regular" as const;
-const WARNING_HEADER = "x-warning-dados-simulados";
 
 export function createRegimeRegularHttpClient(
   options: HttpClientOptions,
 ): RegimeRegularAdapter {
-  const doFetch = options.fetch ?? globalThis.fetch;
-
-  async function request<S extends z.ZodType>(
-    path: string,
-    schema: S,
-    init: RequestInit,
-    signal?: AbortSignal,
-  ): Promise<EngineCallResult<z.infer<S>>> {
-    const timeoutSignal = AbortSignal.timeout(options.timeoutMs);
-    const combined = signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal;
-
-    let response: Response;
-    try {
-      response = await doFetch(`${options.baseUrl}${path}`, {
-        ...init,
-        headers: { Accept: "application/json", ...init.headers },
-        signal: combined,
-        cache: "no-store",
-      });
-    } catch (error) {
-      if (signal?.aborted) throw error;
-      if (timeoutSignal.aborted) {
-        throw new EngineUnavailableError(
-          `O motor não respondeu em ${options.timeoutMs} ms.`,
-          ENGINE,
-          "timeout",
-        );
-      }
-      throw new EngineUnavailableError(
-        `Não foi possível conectar ao motor em ${options.baseUrl}.`,
-        ENGINE,
-        "rede",
-      );
-    }
-
-    const body = await readBody(response);
-
-    if (!response.ok) {
-      throw new EngineHttpError(
-        `O motor respondeu HTTP ${response.status}.`,
-        ENGINE,
-        response.status,
-        body,
-      );
-    }
-
-    const parsed = schema.safeParse(body);
-    if (!parsed.success) {
-      throw new EngineContractError(
-        "A resposta do motor não corresponde ao contrato esperado. O upstream pode ter mudado.",
-        ENGINE,
-        body,
-      );
-    }
-
-    return {
-      // O schema só confere o envelope; o corpo segue exatamente como o motor mandou.
-      data: body as z.infer<S>,
-      status: response.status,
-      warningDadosSimulados: response.headers.get(WARNING_HEADER),
-    };
-  }
-
   return {
     async getVersao(signal) {
-      const result = await request(REGIME_REGULAR_PATHS.versao, versaoSchema, { method: "GET" }, signal);
+      const result = await chamarMotorJson(ENGINE, options, REGIME_REGULAR_PATHS.versao, versaoSchema, { method: "GET" }, signal);
       return result.data;
     },
     calcularComObservabilidade(operacao, signal) {
-      return request(
+      return chamarMotorJson(
+        ENGINE,
+        options,
         REGIME_REGULAR_PATHS.observabilidade,
         observabilidadeRespostaSchema,
         {
@@ -148,14 +66,4 @@ export function createRegimeRegularHttpClient(
       );
     },
   };
-}
-
-async function readBody(response: Response): Promise<unknown> {
-  const text = await response.text();
-  if (!text) return null;
-  try {
-    return JSON.parse(text);
-  } catch {
-    return text;
-  }
 }
