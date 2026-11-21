@@ -1,8 +1,10 @@
 "use client";
 
-import { Download, TriangleAlert } from "lucide-react";
+import { Check, ClipboardCopy, Download, FileSpreadsheet, TriangleAlert } from "lucide-react";
 import { useState } from "react";
+import { respostaParaCsv } from "@/lib/simulation/csv";
 import { extrairMemoriaCalculo } from "@/lib/simulation/memoria";
+import { rotuloSaida } from "@/lib/tax-engine/contrato";
 import type { SimulacaoResultado } from "@/lib/simulation/regime-regular";
 
 const formatar = (valor: unknown) => JSON.stringify(valor, null, 2);
@@ -15,6 +17,73 @@ const ESTADO_ITEM: Record<string, { rotulo: string; classe: string }> = {
   NAO_IMPLEMENTADO: { rotulo: "Não implementado no motor", classe: "badge" },
   FALHA_TECNICA: { rotulo: "Falha técnica", classe: "badge bad" },
 };
+
+/**
+ * Nomes do enum TipoWarningDadosSimulados do motor 1.7.2
+ * (src/main/java/br/gov/serpro/rtc/domain/model/enumeration/TipoWarningDadosSimulados.java).
+ */
+const WARNING_DADOS_SIMULADOS: Record<string, string> = {
+  "1": "CASO_GERAL",
+  "2": "CASO_COMPRAS_GOVERNAMENTAIS",
+  "3": "CASO_IMPOSTO_SELETIVO",
+  "4": "CASO_COMPRAS_GOVERNAMENTAIS_IS",
+  "5": "CASO_ALIQUOTAS_FICTICIAS",
+  "6": "CASO_CALCULOS_SIMULADOS",
+};
+
+interface LinhaValor {
+  grupo: string;
+  campo: string;
+  valor: string;
+}
+
+/** Achata um trecho da resposta do motor em linhas, sem a memória de cálculo (exibida à parte). */
+function linhasDe(valor: unknown, grupo = "", saida: LinhaValor[] = []): LinhaValor[] {
+  if (valor === null || valor === undefined) return saida;
+  if (Array.isArray(valor)) {
+    valor.forEach((v, i) => linhasDe(v, `${grupo}[${i}]`, saida));
+    return saida;
+  }
+  if (typeof valor === "object") {
+    for (const [k, v] of Object.entries(valor)) {
+      if (k === "memoriaCalculo") continue;
+      if (v !== null && typeof v === "object") linhasDe(v, grupo ? `${grupo}.${k}` : k, saida);
+      else if (v !== null && v !== undefined) saida.push({ grupo, campo: k, valor: String(v) });
+    }
+  }
+  return saida;
+}
+
+/** Tabela dos valores devolvidos pelo motor, com os rótulos que o próprio motor publica no OpenAPI. */
+function TabelaValores({ dados, titulo }: { dados: unknown; titulo: string }) {
+  const linhas = linhasDe(dados);
+  if (!linhas.length) return null;
+  return (
+    <div className="mt-4 overflow-x-auto">
+      <table className="w-full border-collapse text-[13px]">
+        <caption className="mb-2 text-left font-mono text-xs text-fg-3">{titulo}</caption>
+        <thead>
+          <tr className="border-b border-line text-left font-mono text-[11px] text-fg-3">
+            <th scope="col" className="py-1.5 pr-3 font-normal">grupo</th>
+            <th scope="col" className="py-1.5 pr-3 font-normal">campo</th>
+            <th scope="col" className="py-1.5 pr-3 font-normal">descrição (motor)</th>
+            <th scope="col" className="py-1.5 text-right font-normal">valor</th>
+          </tr>
+        </thead>
+        <tbody>
+          {linhas.map((l, i) => (
+            <tr key={i} className="border-b border-line-subtle align-top">
+              <td className="py-1.5 pr-3 font-mono text-xs text-fg-3">{l.grupo}</td>
+              <td className="py-1.5 pr-3 font-mono text-xs text-accent-text">{l.campo}</td>
+              <td className="py-1.5 pr-3 text-fg-2">{rotuloSaida(l.campo) ?? ""}</td>
+              <td className="py-1.5 text-right font-mono tabular-nums">{l.valor}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 /** Resultado de sucesso: tudo o que é exibido vem de `resultado` (resposta do motor). */
 export function ResultadoSucesso({ resultado }: { resultado: Extract<SimulacaoResultado, { ok: true }> }) {
@@ -36,6 +105,9 @@ export function ResultadoSucesso({ resultado }: { resultado: Extract<SimulacaoRe
               <dt className="font-mono text-xs text-fg-3">aviso do motor</dt>
               <dd className="text-fg-2">
                 <span className="badge warn">x-warning-dados-simulados: {resultado.warningDadosSimulados}</span>{" "}
+                {WARNING_DADOS_SIMULADOS[resultado.warningDadosSimulados] && (
+                  <code className="font-mono text-xs text-fg-3">{WARNING_DADOS_SIMULADOS[resultado.warningDadosSimulados]}</code>
+                )}{" "}
                 O motor marcou este resultado como dados simulados.
               </dd>
             </>
@@ -49,12 +121,19 @@ export function ResultadoSucesso({ resultado }: { resultado: Extract<SimulacaoRe
         ))}
       </ol>
 
+      {"oper" in resultado.resposta && resultado.resposta.oper !== undefined && (
+        <div className="card p-5">
+          <h3 className="text-sm font-semibold">Dados da operação devolvidos pelo motor</h3>
+          <TabelaValores dados={resultado.resposta.oper} titulo="oper" />
+        </div>
+      )}
+
       {"total" in resultado.resposta && resultado.resposta.total !== undefined && (
-        <details className="card group p-5">
-          <summary className="cursor-pointer text-sm font-medium">Totais devolvidos pelo motor</summary>
-          <p className="mt-2 text-xs text-fg-3">Segundo o upstream, os totais somam apenas os itens calculados.</p>
-          <Json valor={resultado.resposta.total} />
-        </details>
+        <div className="card p-5">
+          <h3 className="text-sm font-semibold">Totais devolvidos pelo motor</h3>
+          <p className="mt-1 text-xs text-fg-3">Segundo o upstream, os totais somam apenas os itens calculados.</p>
+          <TabelaValores dados={resultado.resposta.total} titulo="total" />
+        </div>
       )}
 
       <Inspetor
@@ -120,10 +199,13 @@ function ItemResultado({ objeto }: { objeto: { nObj: number; estadoItem: string;
       )}
 
       {"tribCalc" in objeto && (
-        <details className="mt-4">
-          <summary className="cursor-pointer text-[13px] text-fg-2 hover:text-fg-1">Valores do item (JSON do motor)</summary>
-          <Json valor={objeto.tribCalc} />
-        </details>
+        <>
+          <TabelaValores dados={objeto.tribCalc} titulo="tribCalc (valores como o motor devolveu)" />
+          <details className="mt-3">
+            <summary className="cursor-pointer text-[13px] text-fg-2 hover:text-fg-1">Valores do item (JSON do motor)</summary>
+            <Json valor={objeto.tribCalc} />
+          </details>
+        </>
       )}
     </li>
   );
@@ -182,13 +264,14 @@ export function ErroSimulacao({
 
 function Inspetor({ requisicao, resposta, exportar }: { requisicao: unknown; resposta: unknown; exportar: unknown }) {
   const [aba, setAba] = useState<"resposta" | "requisicao">("resposta");
+  const [copiado, setCopiado] = useState(false);
 
-  function baixar() {
-    const blob = new Blob([formatar(exportar)], { type: "application/json" });
+  function baixar(conteudo: string, tipo: string, extensao: string) {
+    const blob = new Blob([conteudo], { type: tipo });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `simulacao-regime-regular-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
+    a.download = `simulacao-regime-regular-${new Date().toISOString().replace(/[:.]/g, "-")}.${extensao}`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -208,10 +291,29 @@ function Inspetor({ requisicao, resposta, exportar }: { requisicao: unknown; res
             {id === "resposta" ? "Resposta do motor" : "Requisição enviada"}
           </button>
         ))}
-        <button type="button" onClick={baixar} className="btn btn-secondary btn-sm ml-auto">
-          <Download aria-hidden="true" />
-          Exportar JSON
-        </button>
+        <div className="ml-auto flex flex-wrap gap-1">
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            onClick={() => {
+              void navigator.clipboard?.writeText(formatar(aba === "resposta" ? resposta : requisicao)).then(() => {
+                setCopiado(true);
+                setTimeout(() => setCopiado(false), 1500);
+              });
+            }}
+          >
+            {copiado ? <Check aria-hidden="true" /> : <ClipboardCopy aria-hidden="true" />}
+            {copiado ? "Copiado" : "Copiar"}
+          </button>
+          <button type="button" onClick={() => baixar(respostaParaCsv(resposta), "text/csv;charset=utf-8", "csv")} className="btn btn-secondary btn-sm">
+            <FileSpreadsheet aria-hidden="true" />
+            Exportar CSV
+          </button>
+          <button type="button" onClick={() => baixar(formatar(exportar), "application/json", "json")} className="btn btn-secondary btn-sm">
+            <Download aria-hidden="true" />
+            Exportar JSON
+          </button>
+        </div>
       </div>
       <div className="p-3" role="tabpanel">
         <Json valor={aba === "resposta" ? resposta : requisicao} />
