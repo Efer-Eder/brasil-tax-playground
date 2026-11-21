@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { SimuladorRegimeRegular } from "@/components/simulador-regime-regular";
+import { Simulador } from "@/components/simulador/simulador";
 
 export const metadata: Metadata = {
   title: "Simulador · Brasil Tax Playground",
@@ -20,11 +20,11 @@ export default function SimularPage() {
           Simulador do regime regular
         </h1>
         <p className="mt-3 text-[15px] leading-6 text-fg-2">
-          Edite a operação em JSON e envie para o motor oficial. O que aparece à direita é a resposta dele, sem nenhuma conta
-          feita por esta aplicação. Os exemplos são fictícios.
+          Monte a operação passo a passo ou escreva o JSON direto. Os dois modos enviam para o mesmo motor oficial pelo mesmo
+          caminho, e o resultado é a resposta dele, sem nenhuma conta feita por esta aplicação. Os exemplos são fictícios.
         </p>
       </header>
-      <SimuladorRegimeRegular />
+      <Simulador />
     </div>
   );
 }

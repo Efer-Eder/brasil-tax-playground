@@ -59,8 +59,9 @@ export const EXEMPLOS: ExemploOperacao[] = [
   },
   {
     id: "invalido-estrutural",
-    titulo: "Entrada inválida",
-    descricao: "CST com letras e sem itens válidos: a validação estrutural barra antes de chamar o motor.",
+    titulo: "Campos inválidos",
+    descricao:
+      "CST com letra, cClassTrib curta e base negativa. A conferência local aponta os problemas; se enviar mesmo assim, o motor devolve o código de erro de cada campo.",
     operacao: {
       id: "exemplo-ficticio-3",
       ...base,
