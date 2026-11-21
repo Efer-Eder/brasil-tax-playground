@@ -1,0 +1,36 @@
+name: Divergência entre o app e o motor
+description: O resultado mostrado aqui é diferente do que o motor oficial devolve para a mesma entrada.
+labels: ["divergencia"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por reportar. Este projeto não calcula nada: qualquer diferença entre a tela e a resposta do motor é bug daqui.
+        Use dados fictícios. Não cole dados reais de clientes.
+  - type: input
+    id: versao
+    attributes:
+      label: Versão do motor
+      description: Aparece no painel de status e no resultado (ex.: 1.7.2 · base V0073).
+    validations:
+      required: true
+  - type: textarea
+    id: entrada
+    attributes:
+      label: JSON enviado
+      description: Use "Copiar" no modo desenvolvedor ou o inspetor do resultado.
+      render: json
+    validations:
+      required: true
+  - type: textarea
+    id: esperado
+    attributes:
+      label: O que o motor devolve
+      description: Resposta do motor chamado direto (POST /calculadora/observabilidade/regime-geral), se você tiver.
+      render: json
+  - type: textarea
+    id: obtido
+    attributes:
+      label: O que o app mostrou
+    validations:
+      required: true

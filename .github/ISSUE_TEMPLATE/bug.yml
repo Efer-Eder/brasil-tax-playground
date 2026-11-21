@@ -1,0 +1,32 @@
+name: Bug
+description: Algo na interface, na API ou na documentação não funciona como deveria.
+labels: ["bug"]
+body:
+  - type: textarea
+    id: oque
+    attributes:
+      label: O que aconteceu
+    validations:
+      required: true
+  - type: textarea
+    id: passos
+    attributes:
+      label: Como reproduzir
+      placeholder: |
+        1. Abrir /simular
+        2. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: onde
+    attributes:
+      label: Onde
+      options:
+        - Instância pública (efer.online)
+        - Rodando local
+    validations:
+      required: true
+  - type: input
+    id: ambiente
+    attributes:
+      label: Navegador ou versão do Node (se local)
