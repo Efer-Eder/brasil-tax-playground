@@ -106,6 +106,18 @@ Decisões:
 - RAM nova: ~450 MB (Simples) + ~40 MB (DANFSe). Antes do deploy havia ~1,75 GB disponíveis na VPS (`free -m` em 2026-11-21).
 - Rotas novas usam as mesmas zonas de rate limit da API; o Nginx não muda.
 
+Medição na VPS depois do deploy (2026-11-21, release `20261121T042634Z`), de dentro do container do app (passa pela fila do app, sem o Nginx):
+
+| Serviço | Vazão | Latência | Observação |
+|---|---|---|---|
+| Simples Nacional, JVM fria (300 req, 3 em paralelo) | 15 req/s | p50 182 ms, p95 397 ms | primeiras chamadas depois do start |
+| Simples Nacional, aquecido (600 req, 3 em paralelo) | 41 req/s | p50 63 ms, p95 158 ms | acima do teto do Nginx (30 req/s): o motor não é o gargalo |
+| DANFSe (40 PDFs, 2 em paralelo) | 1,8 PDF/s | p50 1,1 s, p95 1,2 s | 0,5 CPU; bem abaixo do timeout de 10 s |
+| DANFSe com 12 clientes ao mesmo tempo | 6 de 60 gerados | os outros 54 recebem 503 `ocupado` em ~3 s | a fila de 8 com espera de 3 s corta o excesso, como planejado |
+
+RAM depois da carga: Simples 436/576 MB, regime regular 383/640 MB, DANFSe 23 a 34/128 MB, app 62/256 MB. `free -m`: 1,4 GB disponíveis.
+Conferido nos containers: `-XX:-UseBASE64Intrinsics` nas duas JVMs; DANFSe como `65534:65534` e raiz somente leitura.
+
 ### Limites do app (fila antes do motor)
 
 | Variável | Valor | Conta |

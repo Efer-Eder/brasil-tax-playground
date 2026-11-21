@@ -107,7 +107,7 @@ Medições (ambiente: Windows 11, Node 24, motor no Docker local; método: 20 re
 | Simples Nacional 1.0.2 (`f90b652`) | Testado | Build oficial com 376 testes verdes; contrato OpenAPI versionado (`lib/tax-engine/contrato/simples-nacional.openapi.json`) e comparado com o motor rodando; fixtures gravadas do motor; E2E guiado e desenvolvedor. |
 | Gerador DANFSe 1.0.0 (`8d79e6b`) | Testado | Imagem do Dockerfile do upstream; PDF e recusa gravados do serviço real; E2E. |
 | Compose com os três serviços | Testado localmente | `docker compose up` no Docker local: os três respondem pela API do app; DANFSe como `nobody` e só leitura. |
-| Publicação em efer.online | Pendente | Aguardando aprovação. |
+| Publicação em efer.online | Testado | Release `20261121T042634Z`: 16 rotas do servidor iguais antes e depois; os três status `disponivel`; simulação do Simples `CALCULADO`; PDF do DANFSe 200; medição na VPS em `docs/deploy-efer-online.md`. |
 
 Achados (detalhes em `docs/upstream-integration.md`):
 

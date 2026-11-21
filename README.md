@@ -23,7 +23,7 @@
 </div>
 
 > [!IMPORTANT]
-> Ferramenta independente, não oficial e não substitui orientação contábil ou tributária. Sem vínculo com a Receita Federal. Projeto **em desenvolvimento**. Simples Nacional e gerador de DANFSe já estão no código; a instância pública recebe essa versão na próxima publicação.
+> Ferramenta independente, não oficial e não substitui orientação contábil ou tributária. Sem vínculo com a Receita Federal. Projeto **em desenvolvimento**. Regime regular, Simples Nacional e gerador de DANFSe estão no ar na instância pública.
 
 ## Por que isso existe
 

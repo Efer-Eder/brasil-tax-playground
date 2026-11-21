@@ -43,8 +43,8 @@ Nada aqui está pronto, a não ser o que estiver marcado. Ordem sujeita a mudan�
 - [x] Motor do Simples Nacional 1.0.2 integrado (guiado, desenvolvedor, dados abertos, fixtures e E2E).
 - [x] Gerador de DANFSe 1.0.0 integrado (XML → PDF, fixtures e E2E).
 - [x] GIFs do README regravados com a interface nova.
-- [ ] Publicar em efer.online (aguardando aprovação).
-- [ ] Medir Simples e DANFSe na VPS e revisar os limites.
+- [x] Publicar em efer.online (2026-11-21).
+- [x] Medir Simples e DANFSe na VPS e revisar os limites.
 - [ ] Emissor didático de NFS-e: formulário → XML validado no XSD → DANFSe "sem valor fiscal", sem transmitir nada.
 
 ## Depois

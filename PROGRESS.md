@@ -14,7 +14,7 @@ Os outros dois repositórios oficiais entram no playground.
 
 ### Próximo passo objetivo
 
-- Com aprovação: push e deploy (Compose com os três serviços; Nginx não muda) e medição na VPS.
+- Publicado em efer.online em 2026-11-21 (release `20261121T042634Z`), medido na VPS (docs/deploy-efer-online.md). Próximo: paridade na CI e o emissor didático de NFS-e.
 
 ## 2026-11-21 — Auditoria do motor e interface guiada
 
