@@ -33,7 +33,7 @@ Nada aqui está pronto, a não ser o que estiver marcado. Ordem sujeita a mudan�
 - [x] Formulário guiado em 5 etapas a partir do contrato do motor; modo desenvolvedor no mesmo caminho.
 - [x] Resultado em tabelas com rótulos do motor, CSV e histórico local.
 - [x] Revisão de segurança (corpo com limite, URL interna, cabeçalhos).
-- [ ] Publicar a versão em efer.online (aguardando aprovação).
+- [x] Publicar a versão em efer.online (2026-11-21).
 - [ ] Paridade e contrato na CI (subir o motor no pipeline).
 - [ ] Regravar os GIFs do README com a interface nova.
 - [ ] Comparar duas simulações lado a lado.

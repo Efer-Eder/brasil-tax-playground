@@ -23,7 +23,7 @@
 </div>
 
 > [!IMPORTANT]
-> Ferramenta independente, não oficial e não substitui orientação contábil ou tributária. Sem vínculo com a Receita Federal. Projeto **em desenvolvimento**. O formulário guiado e o histórico local já estão no código; a instância pública recebe essa versão no próximo deploy.
+> Ferramenta independente, não oficial e não substitui orientação contábil ou tributária. Sem vínculo com a Receita Federal. Projeto **em desenvolvimento**. O formulário guiado e o histórico local já estão na instância pública.
 
 ## Por que isso existe
 

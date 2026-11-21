@@ -23,7 +23,7 @@
 </div>
 
 > [!IMPORTANT]
-> Independent, unofficial tool. It does not replace accounting or tax advice and has no affiliation with Brazil's Federal Revenue Service (Receita Federal). **Work in progress**. The guided form and local history are in the code; the public instance gets this version on the next deploy. The UI is in Brazilian Portuguese.
+> Independent, unofficial tool. It does not replace accounting or tax advice and has no affiliation with Brazil's Federal Revenue Service (Receita Federal). **Work in progress**. The guided form and local history are live on the public instance. The UI is in Brazilian Portuguese.
 
 ## Why this exists
 
