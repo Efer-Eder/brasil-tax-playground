@@ -18,22 +18,29 @@ rm -f "$PACOTE"
 ln -sfn "$REL" "$BASE/current"
 
 cd "$BASE/current"
+if [ -f danfse/imagem.tar ]; then
+  docker load -i danfse/imagem.tar
+  rm -f danfse/imagem.tar
+fi
 docker compose -f docker-compose.yml build
 docker compose -f docker-compose.yml up -d
 
-echo "== aguardando app e motor"
+echo "== aguardando app e motores"
+API=http://127.0.0.1:3020/projeto/brasil-tax-playground/api/engine
 ok=0
 for i in $(seq 1 90); do
-  if curl -fsS --max-time 3 http://127.0.0.1:3020/projeto/brasil-tax-playground/api/engine/status 2>/dev/null | grep -q '"state":"disponivel"'; then
-    ok=1; break
-  fi
+  prontos=0
+  for m in regime-regular simples-nacional danfse; do
+    curl -fsS --max-time 3 "$API/$m/status" 2>/dev/null | grep -q '"state":"disponivel"' && prontos=$((prontos + 1))
+  done
+  if [ "$prontos" = 3 ]; then ok=1; break; fi
   sleep 2
 done
 docker compose -f docker-compose.yml ps
 if [ "$ok" != 1 ]; then
-  echo "ERRO: app/motor não ficaram disponíveis"; docker compose -f docker-compose.yml logs --tail 60; exit 1
+  echo "ERRO: app/motores não ficaram disponíveis"; docker compose -f docker-compose.yml logs --tail 60; exit 1
 fi
-echo "app e motor disponíveis"
+echo "app e os três motores disponíveis"
 
 if [ "$APLICAR_NGINX" = 1 ]; then
   echo "== nginx"

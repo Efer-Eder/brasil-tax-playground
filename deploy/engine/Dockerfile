@@ -18,7 +18,9 @@ USER rtc
 
 # Limites medidos (docs/deploy-efer-online.md): heap 320 MB; RSS observado
 # ~440 MB sob carga. SerialGC por ser container pequeno com CPU limitada.
-ENV JAVA_OPTS="-Xms128m -Xmx320m -XX:MaxMetaspaceSize=160m -XX:ReservedCodeCacheSize=64m -Xss512k -XX:+UseSerialGC -XX:+ExitOnOutOfMemoryError"
+# -XX:-UseBASE64Intrinsics: mitigação pedida no CHANGELOG do upstream (1.7.1),
+# conforme o aviso de segurança do OpenJDK de 17/11/2026.
+ENV JAVA_OPTS="-Xms128m -Xmx320m -XX:MaxMetaspaceSize=160m -XX:ReservedCodeCacheSize=64m -Xss512k -XX:+UseSerialGC -XX:+ExitOnOutOfMemoryError -XX:-UseBASE64Intrinsics"
 
 EXPOSE 8080
 ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -Dspring.profiles.active=offline -jar /engine/api-regime-geral.jar"]

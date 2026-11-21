@@ -1,6 +1,9 @@
 # Instância pública em efer.online. Ver docs/deploy-efer-online.md.
 #
-# - rtc-engine: motor oficial, SEM porta publicada, só na rede interna.
+# - rtc-engine: motor oficial do regime regular, SEM porta publicada, só na rede interna.
+# - simples-engine: motor oficial do Simples Nacional, idem.
+# - danfse: gerador oficial de DANFSe (Go), idem. Imagem do Dockerfile do upstream,
+#   gerada fora da VPS e carregada com `docker load` (ver deploy.ps1).
 # - app: Next.js (UI + API pública), publicado apenas em 127.0.0.1 para o Nginx.
 name: brasil-tax-playground
 
@@ -22,16 +25,57 @@ services:
       driver: json-file
       options: { max-size: "15m", max-file: "3" }
 
+  simples-engine:
+    build: ./engine-simples
+    image: brasil-tax-playground-engine-simples:1.0.2
+    restart: unless-stopped
+    networks: [interna]
+    # Heap 256 MB; RSS medido ~450 MB depois de carga (docs/deploy-efer-online.md).
+    mem_limit: 576m
+    memswap_limit: 576m
+    cpus: 0.75
+    pids_limit: 256
+    read_only: true
+    tmpfs: ["/tmp:size=64m,exec"]
+    security_opt: ["no-new-privileges:true"]
+    logging:
+      driver: json-file
+      options: { max-size: "15m", max-file: "3" }
+
+  danfse:
+    image: brasil-tax-playground-danfse:1.0.0
+    restart: unless-stopped
+    networks: [interna]
+    # O Dockerfile do upstream roda como root; aqui roda como nobody, sem escrita.
+    user: "65534:65534"
+    environment:
+      XML_MAX_SIZE_BYTES: "1048576"
+    mem_limit: 128m
+    memswap_limit: 128m
+    cpus: 0.5
+    pids_limit: 64
+    read_only: true
+    tmpfs: ["/tmp:size=16m"]
+    security_opt: ["no-new-privileges:true"]
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
   app:
     build: ./app
     image: brasil-tax-playground-app:latest
     restart: unless-stopped
-    depends_on: [rtc-engine]
+    depends_on: [rtc-engine, simples-engine, danfse]
     ports: ["127.0.0.1:3020:3000"]
     networks: [interna, publica]
     environment:
       REGIME_REGULAR_ENGINE_URL: http://rtc-engine:8080/api
       REGIME_REGULAR_ENGINE_TIMEOUT_MS: "8000"
+      SIMPLES_NACIONAL_ENGINE_URL: http://simples-engine:8082/api
+      SIMPLES_NACIONAL_ENGINE_TIMEOUT_MS: "8000"
+      DANFSE_ENGINE_URL: http://danfse:8080
+      DANFSE_ENGINE_TIMEOUT_MS: "10000"
+      DANFSE_ENGINE_VERSAO: "1.0.0"
       SIMULACAO_MAX_CONCORRENCIA: "3"
       SIMULACAO_MAX_FILA: "32"
       SIMULACAO_MAX_ESPERA_MS: "3000"
