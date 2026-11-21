@@ -1,0 +1,94 @@
+{
+  "exemploId": "sn-nfse-openapi",
+  "gravadoEm": "2026-11-21T04:07:03.832Z",
+  "motor": {
+    "upstream": "ReceitaFederal/calculadora-rtc-simples-nacional@1.0.2 (f90b652)",
+    "endpoint": "POST /calculadora/observabilidade/simples-nacional/nao-assistido",
+    "versao": {
+      "versaoApp": "1.0.2",
+      "versaoDb": "V0073",
+      "descricaoVersaoDb": "Nova tabela de Classificações Tributárias (IT 2025.002 v.1.71), publicada em 30/10/2026.",
+      "dataVersaoDb": "2026-11-09",
+      "arquivoDb": "calculadora-pro.db",
+      "ambiente": "offline"
+    }
+  },
+  "requisicao": {
+    "itens": [
+      {
+        "numero": 1,
+        "cAtivSN": "12",
+        "cClassTrib": "000001",
+        "nbs": "114051000",
+        "baseCalculo": "10000.00",
+        "tribISSQN": "1",
+        "tpRetISSQN": "1",
+        "tpBM": "1"
+      }
+    ],
+    "id": "op-1",
+    "versao": "3.0.0",
+    "data": "2027-03-15",
+    "tpDoc": "91",
+    "opSimpNac": "3",
+    "regApIBSCBSSN": "1",
+    "regApTribSN": "1",
+    "aliquotasEfetivas": {
+      "fatorR": false,
+      "impedimentoSublimite": false,
+      "anexoIII": {
+        "pCBSSN": "2.3874",
+        "pIBSSN": "0.0263",
+        "semRedistribuicaoISS": {
+          "pCBSSN": "2.3591",
+          "pIBSSN": "0.0260"
+        }
+      }
+    }
+  },
+  "status": 200,
+  "warningDadosSimulados": null,
+  "resposta": {
+    "oper": {
+      "data": "2027-03-15",
+      "tpDoc": "91",
+      "opSimpNac": "3",
+      "regApIBSCBSSN": "1",
+      "regApTribSN": "1",
+      "regimeApuracao": "SN_PLENO"
+    },
+    "resolucaoAliquotas": {
+      "fatorR": false,
+      "indSublimite": false,
+      "itens": [
+        {
+          "numero": 1,
+          "cAtivSN": "12",
+          "anexoAplicado": "III",
+          "tipoAliquota": "SEM_REDISTRIBUICAO",
+          "regraAliquota": "ISENCAO_MUNICIPAL",
+          "pIBSSN": "0.0260",
+          "pCBSSN": "2.3591",
+          "motivo": "RESOLVIDA",
+          "avisos": []
+        }
+      ],
+      "avisos": []
+    },
+    "objetos": [
+      {
+        "nObj": 1,
+        "estadoItem": "INCONSISTENCIA_ENTRADA",
+        "erros": [
+          {
+            "type": "http://localhost/calculadora/observabilidade/simples-nacional/erros?codigo=VSN-050",
+            "title": "NBS desconhecido",
+            "code": "VSN-050",
+            "pointer": "#/itens/0/nbs",
+            "detail": "NBS de código 114051000 não encontrada para a data 2027-03-15"
+          }
+        ]
+      }
+    ]
+  }
+}

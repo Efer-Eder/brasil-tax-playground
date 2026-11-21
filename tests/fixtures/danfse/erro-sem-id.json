@@ -1,0 +1,9 @@
+{
+  "upstream": "ReceitaFederal/calculadora-rtc-gerador-danfse@1.0.0 (8d79e6b)",
+  "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><NFSe><Id></Id></NFSe>",
+  "status": 400,
+  "corpo": {
+    "sucesso": false,
+    "mensagem": "infNFSe Id is empty"
+  }
+}

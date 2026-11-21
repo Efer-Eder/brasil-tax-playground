@@ -3,11 +3,11 @@ import { join } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 
 /**
- * Fluxo ponta a ponta com o servidor de replay (respostas e dados abertos
- * gravados do motor oficial 1.7.2). Os valores conferidos vêm das fixtures.
+ * Fluxo ponta a ponta com o servidor de replay (respostas, dados abertos e PDF
+ * gravados dos motores oficiais). Os valores conferidos vêm das fixtures.
  */
-const fixture = (id: string) =>
-  JSON.parse(readFileSync(join(process.cwd(), "tests", "fixtures", "regime-regular", `${id}.json`), "utf8"));
+const fixture = (id: string, motor = "regime-regular") =>
+  JSON.parse(readFileSync(join(process.cwd(), "tests", "fixtures", motor, `${id}.json`), "utf8"));
 
 async function modoDesenvolvedor(page: Page) {
   await page.goto("/simular");
@@ -23,12 +23,18 @@ test("o aviso legal aparece em todas as páginas", async ({ page }) => {
   }
 });
 
-test("a home mostra o motor disponível com a versão informada por ele", async ({ page }) => {
-  const { versao } = fixture("item-unico-2026").motor;
+test("a home mostra os três serviços disponíveis com a versão informada por eles", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByText("Disponível")).toBeVisible();
-  await expect(page.getByText(versao.versaoApp, { exact: true })).toBeVisible();
-  await expect(page.getByText(versao.versaoDb, { exact: true })).toBeVisible();
+  const painel = (titulo: string) => page.locator("div.card").filter({ hasText: titulo });
+  for (const [titulo, versao] of [
+    ["motor oficial · regime regular", fixture("item-unico-2026").motor.versao],
+    ["motor oficial · simples nacional", fixture("sn-nfe-crt1", "simples-nacional").motor.versao],
+  ] as const) {
+    await expect(painel(titulo).getByText("Disponível")).toBeVisible();
+    await expect(painel(titulo).getByText(versao.versaoApp, { exact: true })).toBeVisible();
+    await expect(painel(titulo).getByText(versao.versaoDb, { exact: true })).toBeVisible();
+  }
+  await expect(painel("gerador oficial · danfse").getByText("Disponível")).toBeVisible();
 });
 
 test("o card do GitHub falha de forma explícita quando a API não responde", async ({ page }) => {
@@ -42,10 +48,10 @@ test("modo guiado: monta a operação com listas do motor e mostra o resultado d
   const memoria = f.resposta.objetos[0].tribCalc.IBSCBS.memoriaCalculo.cbs as string;
 
   await page.goto("/simular");
+  await expect(page.getByRole("radio", { name: /Regime Regular/ })).toHaveAttribute("aria-checked", "true");
   await expect(page.getByRole("tab", { name: "Guiado" })).toHaveAttribute("aria-selected", "true");
-  await page.getByRole("button", { name: "Próximo" }).click();
 
-  // Etapa 2: sem data, não avança e explica.
+  // Etapa 1: sem data, não avança e explica.
   await page.getByRole("button", { name: "Próximo" }).click();
   await expect(page.getByText("Informe a data do fato gerador")).toBeVisible();
 
@@ -56,7 +62,7 @@ test("modo guiado: monta a operação com listas do motor e mostra o resultado d
   await page.getByRole("textbox", { name: "id obrigatório", exact: true }).fill(f.requisicao.id);
   await page.getByRole("button", { name: "Próximo" }).click();
 
-  // Etapa 3: NCM consultado no motor, CST e cClassTrib vindos da tabela dele.
+  // Etapa 2: NCM consultado no motor, CST e cClassTrib vindos da tabela dele.
   await page.getByLabel("Código NCM").fill("22030000");
   await expect(page.getByText("Cervejas de malte.")).toBeVisible();
   await page.getByRole("combobox", { name: "CST obrigatório", exact: true }).selectOption("000");
@@ -64,7 +70,7 @@ test("modo guiado: monta a operação com listas do motor e mostra o resultado d
   await page.getByLabel("Base de cálculo (R$)").fill("100");
   await page.getByRole("button", { name: "Próximo" }).click();
 
-  // Etapa 4: revisão mostra o JSON exato e confere o contrato.
+  // Etapa 3: revisão mostra o JSON exato e confere o contrato.
   await expect(page.getByText("Estrutura conforme o contrato do motor.")).toBeVisible();
   await expect(page.getByLabel("JSON que será enviado")).toContainText('"cClassTrib": "000001"');
   await page.getByRole("button", { name: "Simular" }).click();
@@ -148,4 +154,93 @@ test("histórico: reabre e duplica uma simulação guardada no navegador", async
 
   await page.getByRole("button", { name: /^Remover / }).click();
   await expect(page.getByText("histórico neste navegador (0)")).toBeVisible();
+});
+
+test("Simples Nacional, modo guiado: NFS-e com listas do motor e resolução das alíquotas", async ({ page }) => {
+  const f = fixture("sn-nfse-fator-r", "simples-nacional");
+  const memoria = f.resposta.objetos[0].tribCalc.memoriaCalculo.cbs as string;
+  const r = f.requisicao;
+  const anexo = r.aliquotasEfetivas.anexoIII;
+
+  await page.goto("/simular");
+  await page.getByRole("radio", { name: /Simples Nacional/ }).click();
+
+  // Etapa 1: documento e regime, com as opções escritas no contrato do motor.
+  await page.getByLabel("Data do fato gerador").fill(r.data);
+  await page.getByLabel("Tipo de documento (tpDoc)").selectOption(r.tpDoc);
+  await page.getByLabel("Opção pelo Simples (opSimpNac)").selectOption(r.opSimpNac);
+  await page.getByLabel("Apuração do IBS e da CBS (regApIBSCBSSN)").selectOption(r.regApIBSCBSSN);
+  await page.getByLabel("Apuração dos tributos (regApTribSN)").selectOption(r.regApTribSN);
+  await page.getByText("Identificação (id e versão)").click();
+  await page.getByRole("textbox", { name: "id", exact: true }).fill(r.id);
+  await page.getByRole("button", { name: "Próximo" }).click();
+
+  // Etapa 2: alíquotas efetivas informadas por quem simula (nada pré-preenchido).
+  await page.getByLabel("Fator r (fatorR)").selectOption("true");
+  await page.getByLabel("Impedimento pelo sublimite").selectOption("false");
+  await page.getByText("Anexo III (anexoIII)").click();
+  const grupo = page.locator("div.rounded-md").filter({ hasText: "Anexo III (anexoIII)" }).first();
+  await expect(grupo.getByLabel("pCBSSN (%)").first()).toHaveValue("");
+  await grupo.getByLabel("pCBSSN (%)").first().fill(anexo.pCBSSN);
+  await grupo.getByLabel("pIBSSN (%)").first().fill(anexo.pIBSSN);
+  await page.getByText("Par sem redistribuição do ISS (semRedistribuicaoISS)").click();
+  await grupo.getByLabel("pCBSSN (%)").nth(1).fill(anexo.semRedistribuicaoISS.pCBSSN);
+  await grupo.getByLabel("pIBSSN (%)").nth(1).fill(anexo.semRedistribuicaoISS.pIBSSN);
+  await page.getByRole("button", { name: "Próximo" }).click();
+
+  // Etapa 3: cClassTrib e atividades (cAtivSN) vêm do motor.
+  const item = r.itens[0];
+  await page.getByRole("combobox", { name: "cClassTrib obrigatório", exact: true }).selectOption(item.cClassTrib);
+  await page.getByLabel("Atividade (cAtivSN)").selectOption(item.cAtivSN);
+  await page.getByLabel("Identificação").selectOption("nbs");
+  await page.getByLabel("Código NBS").fill(item.nbs);
+  await page.getByLabel("Base de cálculo (R$)").fill(item.baseCalculo);
+  await page.getByLabel("Tributação do ISSQN").selectOption(item.tribISSQN);
+  await page.getByLabel("Retenção do ISSQN").selectOption(item.tpRetISSQN);
+  await page.getByRole("button", { name: "Próximo" }).click();
+
+  await expect(page.getByText("Estrutura conforme o contrato do motor.")).toBeVisible();
+  await page.getByRole("button", { name: "Simular" }).click();
+
+  const resultado = page.getByRole("listitem").filter({ hasText: "Item 1" });
+  await expect(resultado.getByText("CALCULADO", { exact: true })).toBeVisible();
+  await expect(resultado.getByRole("listitem").filter({ hasText: memoria })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Resolução das alíquotas devolvida pelo motor" })).toBeVisible();
+  await expect(page.getByRole("row").filter({ hasText: "anexoAplicado" })).toContainText("III");
+});
+
+test("Simples Nacional, modo desenvolvedor: erro VSN-050 do exemplo publicado no OpenAPI", async ({ page }) => {
+  const erro = fixture("sn-nfse-openapi", "simples-nacional").resposta.objetos[0].erros[0];
+
+  await page.goto("/simular");
+  await page.getByRole("radio", { name: /Simples Nacional/ }).click();
+  await page.getByRole("tab", { name: "Desenvolvedor (JSON)" }).click();
+  await page.getByLabel("Exemplo fictício").selectOption("sn-nfse-openapi");
+  await page.getByRole("button", { name: "Simular" }).click();
+
+  const item = page.getByRole("listitem").filter({ hasText: "Item 1" });
+  await expect(item.getByText("INCONSISTENCIA_ENTRADA", { exact: true })).toBeVisible();
+  await expect(item.getByText(erro.detail, { exact: true })).toBeVisible();
+});
+
+test("DANFSe: gera o PDF do XML de exemplo e mostra a recusa do gerador", async ({ page }) => {
+  const erro = fixture("erro-sem-id", "danfse");
+
+  await page.goto("/simular");
+  await page.getByRole("radio", { name: /Gerador DANFSe/ }).click();
+  await expect(page.getByRole("tab", { name: "Guiado" })).toHaveCount(0);
+
+  const [resposta] = await Promise.all([
+    page.waitForResponse((r) => r.url().includes("/api/danfse")),
+    page.getByRole("button", { name: "Gerar DANFSe" }).click(),
+  ]);
+  expect(resposta.status()).toBe(200);
+  expect(resposta.headers()["content-type"]).toContain("application/pdf");
+  expect((await resposta.body()).byteLength).toBe(fixture("exemplo", "danfse").bytes);
+  await expect(page.getByText("PDF gerado")).toBeVisible();
+  await expect(page.getByTitle("DANFSe gerado pelo serviço oficial")).toBeVisible();
+
+  await page.getByLabel("XML da NFS-e (enviado ao gerador sem alteração)").fill(erro.xml);
+  await page.getByRole("button", { name: "Gerar DANFSe" }).click();
+  await expect(page.getByRole("region", { name: "DANFSe gerado" }).getByRole("alert")).toContainText(erro.corpo.mensagem);
 });

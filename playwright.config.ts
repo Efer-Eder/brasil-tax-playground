@@ -5,7 +5,7 @@ const ENGINE_PORT = 18080;
 
 /**
  * E2E contra o build de produção (rode `npm run build` antes) e o servidor de
- * replay de fixtures gravadas do motor oficial (tests/e2e/fixture-engine.mjs).
+ * replay de fixtures gravadas dos motores oficiais (tests/e2e/fixture-engine.mjs).
  */
 export default defineConfig({
   testDir: "tests/e2e",
@@ -32,6 +32,9 @@ export default defineConfig({
         PORT: String(APP_PORT),
         HOSTNAME: "127.0.0.1",
         REGIME_REGULAR_ENGINE_URL: `http://127.0.0.1:${ENGINE_PORT}/api`,
+        SIMPLES_NACIONAL_ENGINE_URL: `http://127.0.0.1:${ENGINE_PORT}/sn/api`,
+        DANFSE_ENGINE_URL: `http://127.0.0.1:${ENGINE_PORT}/danfse`,
+        DANFSE_ENGINE_VERSAO: "1.0.0",
         // O card do GitHub não chama a API real nos testes (o replay responde 404).
         GITHUB_API_BASE: `http://127.0.0.1:${ENGINE_PORT}/github`,
         NEXT_TELEMETRY_DISABLED: "1",
