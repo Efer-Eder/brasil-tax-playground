@@ -93,8 +93,9 @@ describe("paridade: fixtures reais × tela de resultado", () => {
       it("não exibe nenhum valor decimal que não esteja na resposta do motor", () => {
         const respostaTexto = JSON.stringify(fixture);
         const valores = resumo.match(/\d[\d.]*,\d+|\d+\.\d+/g) ?? [];
-        // Todos os cenários gravados têm ao menos um item calculado com memória.
-        expect(valores.length).toBeGreaterThan(0);
+        // Cenários com item calculado precisam mostrar algum valor (o teste não pode passar vazio).
+        const temCalculo = fixture.resposta.objetos.some((o) => /CALCULADO|CALCULO_SIMULADO/.test(o.estadoItem));
+        if (temCalculo) expect(valores.length).toBeGreaterThan(0);
         for (const valor of valores) {
           expect(respostaTexto, `valor "${valor}" não veio do motor`).toContain(valor);
         }

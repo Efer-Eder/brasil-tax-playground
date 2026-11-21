@@ -14,6 +14,17 @@ const fixtures = readdirSync(dir)
   .filter((f) => f.endsWith(".json"))
   .map((f) => JSON.parse(readFileSync(new URL(f, dir), "utf8")));
 
+// Dados abertos gravados do motor (formulário guiado), indexados pelo caminho exato.
+const dirDados = new URL("../fixtures/dados-abertos/", import.meta.url);
+const dadosAbertos = new Map(
+  readdirSync(dirDados)
+    .filter((f) => f.endsWith(".json"))
+    .map((f) => {
+      const { caminho, corpo } = JSON.parse(readFileSync(new URL(f, dirDados), "utf8"));
+      return [caminho, corpo];
+    }),
+);
+
 const port = Number(process.env.FIXTURE_ENGINE_PORT ?? 18080);
 
 function json(res, status, body, headers = {}) {
@@ -24,6 +35,12 @@ function json(res, status, body, headers = {}) {
 createServer((req, res) => {
   if (req.method === "GET" && req.url === "/api/calculadora/dados-abertos/versao") {
     return json(res, 200, fixtures[0].motor.versao);
+  }
+  if (req.method === "GET" && req.url.startsWith("/api/calculadora/dados-abertos/")) {
+    const corpo = dadosAbertos.get(req.url.slice("/api".length));
+    return corpo === undefined
+      ? json(res, 404, { title: "Sem gravação", status: 404, detail: "Replay: não há dados abertos gravados para esta consulta." })
+      : json(res, 200, corpo);
   }
   if (req.method === "POST" && req.url === "/api/calculadora/observabilidade/regime-geral") {
     let body = "";
