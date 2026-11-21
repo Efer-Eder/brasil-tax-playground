@@ -38,7 +38,7 @@ export function HistoricoPainel({ registros, aoReabrir, aoDuplicar, aoRemover, a
               <div className="min-w-0 flex-1">
                 <p className="truncate font-mono text-[13px]">{r.titulo}</p>
                 <p className="font-mono text-[11px] text-fg-3">
-                  {new Date(r.criadoEm).toLocaleString("pt-BR")} · {r.modo} · motor {r.motor?.versaoApp ?? "n/d"}
+                  {new Date(r.criadoEm).toLocaleString("pt-BR")} · {r.engine ?? "regime-regular"} · {r.modo} · motor {r.motor?.versaoApp ?? "n/d"}
                 </p>
               </div>
               <div className="flex gap-1">

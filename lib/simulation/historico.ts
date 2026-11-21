@@ -9,6 +9,8 @@ export interface RegistroHistorico {
   criadoEm: string;
   titulo: string;
   modo: "guiado" | "desenvolvedor";
+  /** Motor que calculou; registros antigos (sem o campo) são do regime regular. */
+  engine?: "regime-regular" | "simples-nacional";
   /** Texto exato enviado ao motor. */
   requisicao: string;
   resposta: unknown;
@@ -86,8 +88,9 @@ export function limparHistorico(s?: Armazenamento | null): void {
 /** Título curto a partir do payload: id, data e quantidade de itens. */
 export function tituloDaRequisicao(texto: string): string {
   try {
-    const p = JSON.parse(texto) as { id?: unknown; dhFatoGerador?: unknown; itens?: unknown[] };
-    const data = typeof p.dhFatoGerador === "string" ? p.dhFatoGerador.slice(0, 10) : "sem data";
+    const p = JSON.parse(texto) as { id?: unknown; dhFatoGerador?: unknown; data?: unknown; itens?: unknown[] };
+    const bruta = typeof p.dhFatoGerador === "string" ? p.dhFatoGerador : typeof p.data === "string" ? p.data : null;
+    const data = bruta ? bruta.slice(0, 10) : "sem data";
     const n = Array.isArray(p.itens) ? p.itens.length : 0;
     return `${String(p.id ?? "operação")} · ${data} · ${n} ${n === 1 ? "item" : "itens"}`;
   } catch {

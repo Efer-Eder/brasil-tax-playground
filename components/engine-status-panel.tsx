@@ -3,22 +3,28 @@
 import { RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { withBasePath } from "@/lib/base-path";
-import type { EngineStatus } from "@/lib/tax-engine/types";
+import type { EngineId, EngineStatus } from "@/lib/tax-engine/types";
+
+const TITULO: Record<EngineId, string> = {
+  "regime-regular": "motor oficial · regime regular",
+  "simples-nacional": "motor oficial · simples nacional",
+  danfse: "gerador oficial · danfse",
+};
 
 type PanelState = { kind: "carregando" } | { kind: "erro"; motivo: string } | { kind: "ok"; status: EngineStatus };
 
 /**
- * Mostra se o motor oficial está configurado e respondendo. Nunca exibe
+ * Mostra se um motor oficial está configurado e respondendo. Nunca exibe
  * números de cálculo: apenas o estado da conexão e a versão devolvida pelo
  * próprio motor.
  */
-export function EngineStatusPanel() {
+export function EngineStatusPanel({ motor = "regime-regular" }: { motor?: EngineId }) {
   const [state, setState] = useState<PanelState>({ kind: "carregando" });
 
   async function load(signal?: AbortSignal) {
     setState({ kind: "carregando" });
     try {
-      const res = await fetch(withBasePath("/api/engine/status"), { cache: "no-store", signal });
+      const res = await fetch(withBasePath(`/api/engine/${motor}/status`), { cache: "no-store", signal });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setState({ kind: "ok", status: (await res.json()) as EngineStatus });
     } catch (error) {
@@ -35,14 +41,16 @@ export function EngineStatusPanel() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- busca inicial do estado do motor
     void load(controller.signal);
     return () => controller.abort();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- recarrega só quando o motor muda
+  }, [motor]);
 
   return (
-    <div aria-labelledby="engine-status-title" aria-live="polite" className="card overflow-hidden">
+    <div aria-labelledby={`engine-status-${motor}`} aria-live="polite" className="card overflow-hidden">
       <div className="flex h-10 items-center justify-between gap-3 border-b border-line-subtle bg-[rgba(17,18,21,0.72)] px-4 font-mono text-[11px] text-fg-3">
-        <span id="engine-status-title">motor oficial · regime regular</span>
+        <span id={`engine-status-${motor}`}>{TITULO[motor]}</span>
         <button
           type="button"
+          aria-label={`Verificar novamente: ${TITULO[motor]}`}
           onClick={() => void load()}
           className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-fg-2 hover:bg-[var(--surface-hover)] hover:text-fg-1"
         >

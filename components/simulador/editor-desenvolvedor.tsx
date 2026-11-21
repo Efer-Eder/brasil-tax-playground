@@ -2,8 +2,9 @@
 
 import { Braces, Check, ClipboardCopy, FileUp, Play, ShieldCheck } from "lucide-react";
 import { useRef, useState } from "react";
-import { EXEMPLOS } from "@/lib/simulation/exemplos";
+import { EXEMPLOS, type ExemploOperacao } from "@/lib/simulation/exemplos";
 import { validarPayload, type ProblemaCampo } from "@/lib/simulation/guiado";
+import type { MotorCalculo } from "@/lib/simulation/regime-regular";
 
 const formatar = (valor: unknown) => JSON.stringify(valor, null, 2);
 const LIMITE_ARQUIVO = 500 * 1024;
@@ -14,7 +15,7 @@ type Conferencia =
   | { kind: "problemas"; problemas: ProblemaCampo[] }
   | { kind: "ok" };
 
-function conferir(texto: string): Conferencia {
+function conferir(texto: string, motor: MotorCalculo): Conferencia {
   let json: unknown;
   try {
     json = JSON.parse(texto);
@@ -24,11 +25,20 @@ function conferir(texto: string): Conferencia {
   if (!json || typeof json !== "object" || Array.isArray(json)) {
     return { kind: "json-invalido", mensagem: "O corpo precisa ser um objeto JSON." };
   }
-  const problemas = validarPayload(json as Record<string, unknown>);
+  // Regime regular: espelho do contrato de entrada. Simples Nacional: só o
+  // envelope (os erros de campo vêm do motor, por item).
+  const problemas =
+    motor === "regime-regular"
+      ? validarPayload(json as Record<string, unknown>)
+      : Array.isArray((json as { itens?: unknown }).itens) && (json as { itens: unknown[] }).itens.length
+        ? []
+        : [{ caminho: "itens", mensagem: "Informe ao menos um item" }];
   return problemas.length ? { kind: "problemas", problemas } : { kind: "ok" };
 }
 
 interface Props {
+  motor: MotorCalculo;
+  exemplos?: ExemploOperacao[];
   texto: string;
   aoMudarTexto: (t: string) => void;
   enviando: boolean;
@@ -41,14 +51,14 @@ interface Props {
  * conferência local segue o contrato do motor e é só apoio: dá para enviar
  * mesmo assim, e quem decide é o motor.
  */
-export function EditorDesenvolvedor({ texto, aoMudarTexto, enviando, aoSimular, resultado }: Props) {
+export function EditorDesenvolvedor({ motor, exemplos = EXEMPLOS, texto, aoMudarTexto, enviando, aoSimular, resultado }: Props) {
   const [exemploId, setExemploId] = useState("");
   const [conferencia, setConferencia] = useState<Conferencia>({ kind: "nada" });
   const [copiado, setCopiado] = useState(false);
   const arquivo = useRef<HTMLInputElement>(null);
 
   function carregarExemplo(id: string) {
-    const exemplo = EXEMPLOS.find((e) => e.id === id);
+    const exemplo = exemplos.find((e) => e.id === id);
     setExemploId(id);
     if (exemplo) aoMudarTexto(formatar(exemplo.operacao));
     setConferencia({ kind: "nada" });
@@ -67,12 +77,12 @@ export function EditorDesenvolvedor({ texto, aoMudarTexto, enviando, aoSimular, 
 
   function simular(event: React.FormEvent) {
     event.preventDefault();
-    const c = conferir(texto);
+    const c = conferir(texto, motor);
     setConferencia(c);
     if (c.kind === "ok") aoSimular(texto);
   }
 
-  const exemploAtual = EXEMPLOS.find((e) => e.id === exemploId);
+  const exemploAtual = exemplos.find((e) => e.id === exemploId);
 
   return (
     <div className="grid items-start gap-3 lg:grid-cols-2">
@@ -82,7 +92,7 @@ export function EditorDesenvolvedor({ texto, aoMudarTexto, enviando, aoSimular, 
             <span className="font-mono text-xs text-fg-3">Exemplo fictício</span>
             <select value={exemploId} onChange={(e) => carregarExemplo(e.target.value)} className="field h-9 px-2.5 text-[13px]">
               <option value="">Escolha um exemplo</option>
-              {EXEMPLOS.map((e) => (
+              {exemplos.map((e) => (
                 <option key={e.id} value={e.id}>
                   {e.titulo}
                 </option>
@@ -127,7 +137,7 @@ export function EditorDesenvolvedor({ texto, aoMudarTexto, enviando, aoSimular, 
             <Play aria-hidden="true" />
             {enviando ? "Enviando ao motor…" : "Simular"}
           </button>
-          <button type="button" className="btn btn-secondary" onClick={() => setConferencia(conferir(texto))}>
+          <button type="button" className="btn btn-secondary" onClick={() => setConferencia(conferir(texto, motor))}>
             <ShieldCheck aria-hidden="true" />
             Validar
           </button>
@@ -138,7 +148,7 @@ export function EditorDesenvolvedor({ texto, aoMudarTexto, enviando, aoSimular, 
               try {
                 aoMudarTexto(formatar(JSON.parse(texto)));
               } catch {
-                setConferencia(conferir(texto));
+                setConferencia(conferir(texto, motor));
               }
             }}
           >
@@ -159,10 +169,17 @@ export function EditorDesenvolvedor({ texto, aoMudarTexto, enviando, aoSimular, 
             {copiado ? "Copiado" : "Copiar"}
           </button>
         </div>
-        <p className="text-xs leading-5 text-fg-3">
-          Campos conforme <code>OperacaoInput</code> do motor 1.7.2. A partir de 2027 o motor exige <code>aliquotasNominais</code> por
-          item; este app não sugere valores de alíquota.
-        </p>
+        {motor === "regime-regular" ? (
+          <p className="text-xs leading-5 text-fg-3">
+            Campos conforme <code>OperacaoInput</code> do motor 1.7.2. A partir de 2027 o motor exige <code>aliquotasNominais</code> por
+            item; este app não sugere valores de alíquota.
+          </p>
+        ) : (
+          <p className="text-xs leading-5 text-fg-3">
+            Campos conforme <code>OperacaoSimplesNaoAssistidaInput</code> do motor 1.0.2. As alíquotas efetivas
+            (<code>aliquotasEfetivas</code>) são do contribuinte e vêm de quem simula; este app não sugere valores.
+          </p>
+        )}
       </form>
 
       <section aria-live="polite" aria-label="Resultado" className="flex min-w-0 flex-col gap-3">

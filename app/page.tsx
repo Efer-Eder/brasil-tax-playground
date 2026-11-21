@@ -21,8 +21,10 @@ export default function Home() {
   return (
     <div className="wrap">
       <Hero />
-      <section className="pt-2" aria-label="Estado do motor">
-        <EngineStatusPanel />
+      <section className="flex flex-col gap-3 pt-2" aria-label="Estado dos motores">
+        <EngineStatusPanel motor="regime-regular" />
+        <EngineStatusPanel motor="simples-nacional" />
+        <EngineStatusPanel motor="danfse" />
       </section>
       <Repositorio />
       <ComoFunciona />
@@ -39,7 +41,7 @@ function Hero() {
     <section className="pt-24 pb-14 max-sm:pt-14 max-sm:pb-10" aria-labelledby="hero-t">
       <span className="inline-flex items-center gap-2 rounded-full border border-line bg-surface-1 py-1 pr-2.5 pl-2 font-mono text-xs leading-4 tracking-[0.02em] text-fg-2">
         <span className="dot" aria-hidden="true" />
-        open source · MIT · motor oficial 1.7.2
+        open source · MIT · 3 serviços oficiais
       </span>
       <h1
         id="hero-t"
@@ -49,9 +51,10 @@ function Hero() {
         <span className="text-fg-3"> Um playground para os motores open source da Reforma Tributária.</span>
       </h1>
       <p className="mt-5 max-w-[640px] text-[17px] leading-7 tracking-[-0.005em] text-fg-2 max-sm:text-base max-sm:leading-[26px]">
-        Você monta uma operação, ela vai para o motor de cálculo que a Receita Federal publicou no GitHub e volta a resposta
-        crua: CBS, IBS e IS por item, a memória de cálculo em texto e a versão do motor que gerou cada número. Esta
-        aplicação não calcula tributo nenhum; ela só valida o formato, chama o motor e mostra o que ele devolveu.
+        Você monta uma operação, ela vai para o motor de cálculo que a Receita Federal publicou no GitHub (regime regular
+        ou Simples Nacional) e volta a resposta crua: CBS, IBS e IS por item, a memória de cálculo em texto e a versão do
+        motor que gerou cada número. Com o XML de uma NFS-e, o gerador oficial devolve o PDF do DANFSe. Esta aplicação não
+        calcula tributo nenhum; ela só valida o formato, chama o serviço oficial e mostra o que ele devolveu.
       </p>
       <div className="mt-8 flex flex-wrap gap-2">
         <Link className="btn btn-primary" href="/simular">
@@ -134,8 +137,9 @@ function ComoFunciona() {
     {
       n: "03",
       titulo: "Motor oficial",
-      texto: "calculadora-rtc-regime-regular 1.7.2, sem modificações, num container sem porta publicada e sem saída para a internet.",
-      tag: "Java 25 · SQLite",
+      texto:
+        "Regime regular 1.7.2, Simples Nacional 1.0.2 e gerador de DANFSe 1.0.0, sem modificações, em containers sem porta publicada e sem saída para a internet.",
+      tag: "Java 25 · Go",
     },
   ];
   const regras = [
@@ -190,12 +194,18 @@ function ComoFunciona() {
 
 function Api() {
   const endpoints = [
-    { metodo: "GET", rota: "/engine/status", desc: "Estado do motor e versão (app, base de dados e data da base)." },
+    { metodo: "GET", rota: "/engine/{motor}/status", desc: "Estado e versão de regime-regular, simples-nacional ou danfse." },
     {
       metodo: "POST",
       rota: "/simular/regime-regular",
       desc: "Corpo: OperacaoInput. Resposta: requisição, resposta crua do motor, versão e x-warning-dados-simulados.",
     },
+    {
+      metodo: "POST",
+      rota: "/simular/simples-nacional",
+      desc: "Corpo: OperacaoSimplesNaoAssistidaInput, com as alíquotas efetivas do contribuinte. Mesma resposta.",
+    },
+    { metodo: "POST", rota: "/danfse", desc: "Corpo: XML da NFS-e. Resposta: o PDF do DANFSe gerado pelo serviço oficial." },
   ];
   const codigos = [
     ["200", "ok", "Cálculo feito. Erro por item vem dentro de objetos[].estadoItem, como no motor."],
@@ -239,7 +249,10 @@ function Api() {
   -H 'Content-Type: application/json' \\
   -d '{"id":"teste","versao":"1.0.0","dhFatoGerador":"2026-06-01T10:00:00-03:00",
        "municipio":4314902,"uf":"RS",
-       "itens":[{"numero":1,"ncm":"22030000","cst":"000","cClassTrib":"000001","baseCalculo":100}]}'`}
+       "itens":[{"numero":1,"ncm":"22030000","cst":"000","cClassTrib":"000001","baseCalculo":100}]}'\n\n`}
+            <span className="c"># DANFSe em PDF a partir do XML de uma NFS-e (stc e canhoto opcionais){"\n"}</span>
+            {`curl -X POST "${LINKS.api}/danfse?canhoto=false" \\
+  -H 'Content-Type: application/xml' --data-binary @nfse.xml -o danfse.pdf`}
           </pre>
           <p className="text-[13px] leading-5 text-fg-3">
             Os campos são os do motor oficial. A página <Link className="text-accent-text hover:underline" href="/simular">/simular</Link> tem

@@ -5,16 +5,17 @@ import { useState } from "react";
 import { respostaParaCsv } from "@/lib/simulation/csv";
 import { extrairMemoriaCalculo } from "@/lib/simulation/memoria";
 import { rotuloSaida } from "@/lib/tax-engine/contrato";
-import type { SimulacaoResultado } from "@/lib/simulation/regime-regular";
+import type { MotorCalculo, SimulacaoResultado } from "@/lib/simulation/regime-regular";
 
 const formatar = (valor: unknown) => JSON.stringify(valor, null, 2);
 
-/** Rótulos dos estados de item documentados no upstream (docs/exemplos.md). */
+/** Rótulos dos estados de item documentados nos dois upstreams (regime regular e Simples Nacional). */
 const ESTADO_ITEM: Record<string, { rotulo: string; classe: string }> = {
   CALCULADO: { rotulo: "Calculado", classe: "badge ok" },
   CALCULO_SIMULADO: { rotulo: "Cálculo simulado", classe: "badge warn" },
   INCONSISTENCIA_ENTRADA: { rotulo: "Inconsistência na entrada", classe: "badge bad" },
   NAO_IMPLEMENTADO: { rotulo: "Não implementado no motor", classe: "badge" },
+  NAO_CALCULADO: { rotulo: "Não calculado", classe: "badge warn" },
   FALHA_TECNICA: { rotulo: "Falha técnica", classe: "badge bad" },
 };
 
@@ -55,7 +56,7 @@ function linhasDe(valor: unknown, grupo = "", saida: LinhaValor[] = []): LinhaVa
 }
 
 /** Tabela dos valores devolvidos pelo motor, com os rótulos que o próprio motor publica no OpenAPI. */
-function TabelaValores({ dados, titulo }: { dados: unknown; titulo: string }) {
+function TabelaValores({ dados, titulo, motor }: { dados: unknown; titulo: string; motor: MotorCalculo }) {
   const linhas = linhasDe(dados);
   if (!linhas.length) return null;
   return (
@@ -75,7 +76,7 @@ function TabelaValores({ dados, titulo }: { dados: unknown; titulo: string }) {
             <tr key={i} className="border-b border-line-subtle align-top">
               <td className="py-1.5 pr-3 font-mono text-xs text-fg-3">{l.grupo}</td>
               <td className="py-1.5 pr-3 font-mono text-xs text-accent-text">{l.campo}</td>
-              <td className="py-1.5 pr-3 text-fg-2">{rotuloSaida(l.campo) ?? ""}</td>
+              <td className="py-1.5 pr-3 text-fg-2">{rotuloSaida(l.campo, motor) ?? ""}</td>
               <td className="py-1.5 text-right font-mono tabular-nums">{l.valor}</td>
             </tr>
           ))}
@@ -89,6 +90,8 @@ function TabelaValores({ dados, titulo }: { dados: unknown; titulo: string }) {
 export function ResultadoSucesso({ resultado }: { resultado: Extract<SimulacaoResultado, { ok: true }> }) {
   const objetos = resultado.resposta.objetos;
   const versao = resultado.motor.versao;
+  const motor: MotorCalculo = resultado.engine ?? "regime-regular";
+  const resolucao = (resultado.resposta as { resolucaoAliquotas?: unknown }).resolucaoAliquotas;
 
   return (
     <>
@@ -96,6 +99,7 @@ export function ResultadoSucesso({ resultado }: { resultado: Extract<SimulacaoRe
         <dl className="grid grid-cols-[max-content_1fr] gap-x-6 gap-y-2 text-[13px]">
           <dt className="font-mono text-xs text-fg-3">motor</dt>
           <dd className="font-mono">
+            {motor} ·{" "}
             {versao?.versaoApp ?? "versão não informada"} · base {versao?.versaoDb ?? "n/d"} ({versao?.dataVersaoDb ?? "n/d"})
           </dd>
           <dt className="font-mono text-xs text-fg-3">executado em</dt>
@@ -117,14 +121,24 @@ export function ResultadoSucesso({ resultado }: { resultado: Extract<SimulacaoRe
 
       <ol className="flex flex-col gap-3">
         {objetos.map((objeto) => (
-          <ItemResultado key={objeto.nObj} objeto={objeto} />
+          <ItemResultado key={objeto.nObj} objeto={objeto} motor={motor} />
         ))}
       </ol>
+
+      {resolucao !== undefined && resolucao !== null && (
+        <div className="card p-5">
+          <h3 className="text-sm font-semibold">Resolução das alíquotas devolvida pelo motor</h3>
+          <p className="mt-1 text-xs text-fg-3">
+            Anexo, par de alíquotas (com ou sem redistribuição do ISS) e a regra que o motor escolheu para cada item.
+          </p>
+          <TabelaValores dados={resolucao} titulo="resolucaoAliquotas" motor={motor} />
+        </div>
+      )}
 
       {"oper" in resultado.resposta && resultado.resposta.oper !== undefined && (
         <div className="card p-5">
           <h3 className="text-sm font-semibold">Dados da operação devolvidos pelo motor</h3>
-          <TabelaValores dados={resultado.resposta.oper} titulo="oper" />
+          <TabelaValores dados={resultado.resposta.oper} titulo="oper" motor={motor} />
         </div>
       )}
 
@@ -132,11 +146,12 @@ export function ResultadoSucesso({ resultado }: { resultado: Extract<SimulacaoRe
         <div className="card p-5">
           <h3 className="text-sm font-semibold">Totais devolvidos pelo motor</h3>
           <p className="mt-1 text-xs text-fg-3">Segundo o upstream, os totais somam apenas os itens calculados.</p>
-          <TabelaValores dados={resultado.resposta.total} titulo="total" />
+          <TabelaValores dados={resultado.resposta.total} titulo="total" motor={motor} />
         </div>
       )}
 
       <Inspetor
+        motor={motor}
         requisicao={resultado.requisicao}
         resposta={resultado.resposta}
         exportar={{
@@ -153,10 +168,11 @@ export function ResultadoSucesso({ resultado }: { resultado: Extract<SimulacaoRe
   );
 }
 
-function ItemResultado({ objeto }: { objeto: { nObj: number; estadoItem: string; [k: string]: unknown } }) {
+function ItemResultado({ objeto, motor }: { objeto: { nObj: number; estadoItem: string; [k: string]: unknown }; motor: MotorCalculo }) {
   const estado = ESTADO_ITEM[objeto.estadoItem] ?? { rotulo: objeto.estadoItem, classe: "badge" };
   const memoria = extrairMemoriaCalculo(objeto);
   const erros = Array.isArray(objeto.erros) ? (objeto.erros as Record<string, unknown>[]) : [];
+  const motivo = objeto.motivoEstado as { codigo?: unknown; descricao?: unknown } | undefined;
 
   return (
     <li className="card p-5">
@@ -165,6 +181,13 @@ function ItemResultado({ objeto }: { objeto: { nObj: number; estadoItem: string;
         <span className={estado.classe}>{estado.rotulo}</span>
         <code className="font-mono text-xs text-fg-3">{objeto.estadoItem}</code>
       </div>
+
+      {motivo && (
+        <p className="mt-3 text-[13px] text-fg-2">
+          <span className="font-mono text-xs text-fg-3">motivoEstado</span> <code className="font-mono">{String(motivo.codigo ?? "")}</code>
+          {motivo.descricao ? `: ${String(motivo.descricao)}` : ""}
+        </p>
+      )}
 
       {erros.length > 0 && (
         <ul className="mt-4 flex flex-col gap-2 text-[13px]">
@@ -200,7 +223,7 @@ function ItemResultado({ objeto }: { objeto: { nObj: number; estadoItem: string;
 
       {"tribCalc" in objeto && (
         <>
-          <TabelaValores dados={objeto.tribCalc} titulo="tribCalc (valores como o motor devolveu)" />
+          <TabelaValores dados={objeto.tribCalc} titulo="tribCalc (valores como o motor devolveu)" motor={motor} />
           <details className="mt-3">
             <summary className="cursor-pointer text-[13px] text-fg-2 hover:text-fg-1">Valores do item (JSON do motor)</summary>
             <Json valor={objeto.tribCalc} />
@@ -262,7 +285,7 @@ export function ErroSimulacao({
   );
 }
 
-function Inspetor({ requisicao, resposta, exportar }: { requisicao: unknown; resposta: unknown; exportar: unknown }) {
+function Inspetor({ motor, requisicao, resposta, exportar }: { motor: MotorCalculo; requisicao: unknown; resposta: unknown; exportar: unknown }) {
   const [aba, setAba] = useState<"resposta" | "requisicao">("resposta");
   const [copiado, setCopiado] = useState(false);
 
@@ -271,7 +294,7 @@ function Inspetor({ requisicao, resposta, exportar }: { requisicao: unknown; res
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `simulacao-regime-regular-${new Date().toISOString().replace(/[:.]/g, "-")}.${extensao}`;
+    a.download = `simulacao-${motor}-${new Date().toISOString().replace(/[:.]/g, "-")}.${extensao}`;
     a.click();
     URL.revokeObjectURL(url);
   }

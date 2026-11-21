@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, Check, Code2, Play, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Code2, Play, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   FUSOS_BRASIL,
@@ -13,18 +13,18 @@ import {
   type ProblemaCampo,
 } from "@/lib/simulation/guiado";
 import { campo, camposDe, MOTOR_DO_CONTRATO } from "@/lib/tax-engine/contrato";
-import { ENGINES } from "@/lib/tax-engine";
+import { Passos, Revisao, Titulo } from "./assistente";
 import { CampoSelect, CampoTexto, GrupoOpcional, type OpcaoSelect } from "./campos";
 import { useDadosAbertos, type Municipio, type SituacaoTributaria, type Uf } from "./usar-dados-abertos";
 
-const ETAPAS = ["Cenário", "Operação", "Itens", "Revisão", "Resultado"] as const;
-type Etapa = 1 | 2 | 3 | 4 | 5;
+const ETAPAS = ["Operação", "Itens", "Revisão", "Resultado"] as const;
+type Etapa = 1 | 2 | 3 | 4;
 
 interface Props {
   enviando: boolean;
   aoSimular: (texto: string) => void;
   aoAbrirNoModoDev: (texto: string) => void;
-  /** Resultado da última simulação feita por este formulário (etapa 5). */
+  /** Resultado da última simulação feita por este formulário (última etapa). */
   resultado: React.ReactNode | null;
 }
 
@@ -40,24 +40,24 @@ export function FormularioGuiado({ enviando, aoSimular, aoAbrirNoModoDev, result
   const problemas = useMemo(() => validarOperacaoGuiada(op), [op]);
 
   const erro = (caminho: string) =>
-    mostrarErros[caminho.startsWith("itens") ? 3 : 2] ? problemas.find((p) => p.caminho === caminho)?.mensagem : undefined;
+    mostrarErros[caminho.startsWith("itens") ? 2 : 1] ? problemas.find((p) => p.caminho === caminho)?.mensagem : undefined;
 
   function avancar() {
-    const daEtapa = (p: ProblemaCampo) => (etapa === 2 ? !p.caminho.startsWith("itens") : p.caminho.startsWith("itens"));
-    if ((etapa === 2 || etapa === 3) && problemas.some(daEtapa)) {
+    const daEtapa = (p: ProblemaCampo) => (etapa === 1 ? !p.caminho.startsWith("itens") : p.caminho.startsWith("itens"));
+    if ((etapa === 1 || etapa === 2) && problemas.some(daEtapa)) {
       setMostrarErros((m) => ({ ...m, [etapa]: true }));
       return;
     }
-    setEtapa((e) => Math.min(5, e + 1) as Etapa);
+    setEtapa((e) => Math.min(4, e + 1) as Etapa);
   }
 
   function simular() {
     if (problemas.length) {
-      setMostrarErros({ 2: true, 3: true });
+      setMostrarErros({ 1: true, 2: true });
       return;
     }
     aoSimular(texto);
-    setEtapa(5);
+    setEtapa(4);
   }
 
   const atualizar = (parcial: Partial<OperacaoGuiada>) => setOp((o) => ({ ...o, ...parcial }));
@@ -66,11 +66,10 @@ export function FormularioGuiado({ enviando, aoSimular, aoAbrirNoModoDev, result
 
   return (
     <div className="card overflow-hidden">
-      <Passos etapa={etapa} irPara={(e) => e < etapa && setEtapa(e)} />
+      <Passos etapas={ETAPAS} etapa={etapa} irPara={(e) => setEtapa(e as Etapa)} />
       <div className="p-6 max-sm:p-4">
-        {etapa === 1 && <EtapaCenario />}
-        {etapa === 2 && <EtapaOperacao op={op} atualizar={atualizar} erro={erro} />}
-        {etapa === 3 && (
+        {etapa === 1 && <EtapaOperacao op={op} atualizar={atualizar} erro={erro} />}
+        {etapa === 2 && (
           <EtapaItens
             op={op}
             erro={erro}
@@ -84,42 +83,44 @@ export function FormularioGuiado({ enviando, aoSimular, aoAbrirNoModoDev, result
             }
           />
         )}
-        {etapa === 4 && <EtapaRevisao problemas={problemas} texto={texto} irPara={setEtapa} />}
-        {etapa === 5 && (
+        {etapa === 3 && (
+          <Revisao problemas={problemas} texto={texto} aoClicarProblema={(p) => setEtapa(p.caminho.startsWith("itens") ? 2 : 1)} />
+        )}
+        {etapa === 4 && (
           <div className="flex flex-col gap-3">
             {resultado ?? <p className="text-[13px] text-fg-3">Envie a operação na etapa de revisão.</p>}
           </div>
         )}
 
         <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-line-subtle pt-4">
-          {etapa > 1 && etapa < 5 && (
+          {etapa > 1 && etapa < 4 && (
             <button type="button" className="btn btn-ghost" onClick={() => setEtapa((e) => (e - 1) as Etapa)}>
               <ArrowLeft aria-hidden="true" />
               Voltar
             </button>
           )}
           <div className="ml-auto flex flex-wrap gap-2">
-            {etapa === 4 && (
+            {etapa === 3 && (
               <button type="button" className="btn btn-secondary" onClick={() => aoAbrirNoModoDev(texto)}>
                 <Code2 aria-hidden="true" />
                 Abrir no modo desenvolvedor
               </button>
             )}
-            {etapa < 4 && (
+            {etapa < 3 && (
               <button type="button" className="btn btn-primary" onClick={avancar}>
                 Próximo
                 <ArrowRight aria-hidden="true" />
               </button>
             )}
-            {etapa === 4 && (
+            {etapa === 3 && (
               <button type="button" className="btn btn-primary" onClick={simular} disabled={enviando}>
                 <Play aria-hidden="true" />
                 {enviando ? "Enviando ao motor…" : "Simular"}
               </button>
             )}
-            {etapa === 5 && (
+            {etapa === 4 && (
               <>
-                <button type="button" className="btn btn-secondary" onClick={() => setEtapa(3)}>
+                <button type="button" className="btn btn-secondary" onClick={() => setEtapa(2)}>
                   Editar a operação
                 </button>
                 <button
@@ -142,84 +143,6 @@ export function FormularioGuiado({ enviando, aoSimular, aoAbrirNoModoDev, result
   );
 }
 
-function Passos({ etapa, irPara }: { etapa: Etapa; irPara: (e: Etapa) => void }) {
-  return (
-    <ol className="flex border-b border-line-subtle bg-[rgba(17,18,21,0.72)]" aria-label="Etapas">
-      {ETAPAS.map((nome, i) => {
-        const n = (i + 1) as Etapa;
-        const atual = n === etapa;
-        const feita = n < etapa;
-        return (
-          <li key={nome} className="min-w-0 flex-1">
-            <button
-              type="button"
-              onClick={() => irPara(n)}
-              disabled={!feita}
-              aria-current={atual ? "step" : undefined}
-              className={`flex w-full items-center gap-2 border-b-2 px-3 py-3 text-left text-[13px] max-sm:justify-center ${
-                atual ? "border-accent text-fg-1" : feita ? "border-transparent text-fg-2 hover:text-fg-1" : "border-transparent text-fg-3"
-              }`}
-            >
-              <span
-                className={`grid h-5 w-5 flex-none place-items-center rounded-full font-mono text-[11px] ${
-                  feita ? "bg-[var(--success-subtle)] text-ok" : atual ? "bg-[var(--accent-subtle)] text-accent-text" : "bg-surface-2 text-fg-3"
-                }`}
-              >
-                {feita ? <Check className="h-3 w-3" aria-hidden="true" /> : n}
-              </span>
-              <span className="truncate max-sm:hidden">{nome}</span>
-            </button>
-          </li>
-        );
-      })}
-    </ol>
-  );
-}
-
-function Titulo({ titulo, children }: { titulo: string; children?: React.ReactNode }) {
-  return (
-    <div className="mb-5">
-      <h2 className="text-lg font-semibold tracking-[-0.01em]">{titulo}</h2>
-      {children && <p className="mt-1 text-[13px] leading-5 text-fg-2">{children}</p>}
-    </div>
-  );
-}
-
-function EtapaCenario() {
-  return (
-    <>
-      <Titulo titulo="Qual motor vai calcular?">
-        Só aparece como disponível o que está integrado e testado neste projeto.
-      </Titulo>
-      <div className="grid gap-3 sm:grid-cols-3" role="radiogroup" aria-label="Cenário">
-        {ENGINES.map((e) => {
-          const ativo = e.stage === "em-integracao";
-          return (
-            <div
-              key={e.id}
-              role="radio"
-              aria-checked={ativo}
-              aria-disabled={!ativo}
-              className={`rounded-md border p-4 ${ativo ? "border-accent bg-[var(--accent-subtle)]" : "border-line-subtle opacity-60"}`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-[13px] font-semibold">{e.nome.replace("Calculadora RTC · ", "")}</span>
-                <span className={ativo ? "badge ok" : "badge"}>{ativo ? "Disponível" : "Planejado"}</span>
-              </div>
-              <p className="mt-2 text-xs leading-4 text-fg-2">{e.descricao}</p>
-              <p className="mt-2 font-mono text-[11px] text-fg-3">{e.upstreamReferencia}</p>
-            </div>
-          );
-        })}
-      </div>
-      <p className="mt-4 text-xs leading-4 text-fg-3">
-        Motor em uso: calculadora-rtc-regime-regular {MOTOR_DO_CONTRATO.versaoApp}, base {MOTOR_DO_CONTRATO.versaoDb} de{" "}
-        {MOTOR_DO_CONTRATO.dataVersaoDb}. Os campos das próximas etapas seguem o contrato publicado por ele.
-      </p>
-    </>
-  );
-}
-
 function EtapaOperacao({
   op,
   atualizar,
@@ -236,7 +159,10 @@ function EtapaOperacao({
 
   return (
     <>
-      <Titulo titulo="Dados da operação">Data do fato gerador, local e documento. Listas vêm dos dados abertos do motor.</Titulo>
+      <Titulo titulo="Dados da operação">
+        Data do fato gerador, local e documento. Listas vêm dos dados abertos do motor
+        (calculadora-rtc-regime-regular {MOTOR_DO_CONTRATO.versaoApp}, base {MOTOR_DO_CONTRATO.versaoDb}).
+      </Titulo>
       <div className="grid gap-4 sm:grid-cols-3">
         <CampoTexto rotulo="Data do fato gerador" contrato={["OperacaoInput", "dhFatoGerador"]} tipo="date" valor={op.data} aoMudar={(v) => atualizar({ data: v })} erro={erro("dhFatoGerador")} obrigatorio />
         <CampoTexto rotulo="Hora" ajuda="Hora local do fato gerador." tipo="time" valor={op.hora} aoMudar={(v) => atualizar({ hora: v })} />
@@ -497,37 +423,5 @@ function DescricaoCodigo({ item, data }: { item: ItemGuiado; data: string | null
       <span className="font-mono text-ok">motor:</span> {texto || "código encontrado"}
       {d.tributadoPeloImpostoSeletivo === true && <span className="badge warn ml-2">tributado pelo IS</span>}
     </p>
-  );
-}
-
-function EtapaRevisao({ problemas, texto, irPara }: { problemas: ProblemaCampo[]; texto: string; irPara: (e: Etapa) => void }) {
-  return (
-    <>
-      <Titulo titulo="Revisão">
-        Este é exatamente o JSON que vai para o motor. A conferência abaixo segue o contrato dele; quem decide é o motor.
-      </Titulo>
-      {problemas.length ? (
-        <div className="mb-4 rounded-md border border-[rgba(224,100,106,0.24)] bg-[var(--danger-subtle)] p-4 text-[13px]" role="alert">
-          <p className="font-medium">Faltam ajustes antes de enviar:</p>
-          <ul className="mt-2 flex flex-col gap-1">
-            {problemas.map((p) => (
-              <li key={p.caminho + p.mensagem}>
-                <button type="button" className="text-left hover:underline" onClick={() => irPara(p.caminho.startsWith("itens") ? 3 : 2)}>
-                  <code className="font-mono text-accent-text">{p.caminho || "(raiz)"}</code>: <span className="text-fg-2">{p.mensagem}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : (
-        <p className="mb-4 flex items-center gap-2 text-[13px] text-ok">
-          <Check className="h-4 w-4" aria-hidden="true" />
-          Estrutura conforme o contrato do motor.
-        </p>
-      )}
-      <pre className="code max-h-96" aria-label="JSON que será enviado">
-        {texto}
-      </pre>
-    </>
   );
 }

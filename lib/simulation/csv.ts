@@ -24,9 +24,9 @@ function folhas(valor: unknown, caminho: string, saida: { caminho: string; valor
   saida.push({ caminho, valor: String(valor) });
 }
 
-/** Linhas a partir da resposta da observabilidade (objetos e total). */
+/** Linhas a partir da resposta da observabilidade (objetos, oper, resolucaoAliquotas do Simples e total). */
 export function linhasDaResposta(resposta: unknown): LinhaResultado[] {
-  const r = (resposta ?? {}) as { objetos?: Record<string, unknown>[]; total?: unknown; oper?: unknown };
+  const r = (resposta ?? {}) as { objetos?: Record<string, unknown>[]; total?: unknown; oper?: unknown; resolucaoAliquotas?: unknown };
   const linhas: LinhaResultado[] = [];
   for (const obj of r.objetos ?? []) {
     const f: { caminho: string; valor: string }[] = [];
@@ -36,6 +36,7 @@ export function linhasDaResposta(resposta: unknown): LinhaResultado[] {
   }
   for (const [grupo, valor] of [
     ["oper", r.oper],
+    ["resolucaoAliquotas", r.resolucaoAliquotas],
     ["total", r.total],
   ] as const) {
     const f: { caminho: string; valor: string }[] = [];
