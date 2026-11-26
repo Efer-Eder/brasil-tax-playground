@@ -16,6 +16,7 @@ import {
 import type { MotorCalculo, SimulacaoResultado } from "@/lib/simulation/regime-regular";
 import { ENGINES, type EngineId } from "@/lib/tax-engine";
 import { Alerta, ErroSimulacao, ResultadoSucesso } from "../resultado-simulacao";
+import { ComparacaoSimulacoes } from "./comparacao-simulacoes";
 import { DanfsePainel } from "./danfse-painel";
 import { EditorDesenvolvedor } from "./editor-desenvolvedor";
 import { FormularioGuiado } from "./formulario-guiado";
@@ -47,6 +48,8 @@ export function Simulador() {
   }));
   const [estado, setEstado] = useState<Estado>({ kind: "ocioso" });
   const [historico, setHistorico] = useState<RegistroHistorico[]>([]);
+  const [selecionados, setSelecionados] = useState<string[]>([]);
+  const [comparando, setComparando] = useState<[RegistroHistorico, RegistroHistorico] | null>(null);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- histórico vem do localStorage só no cliente
@@ -210,12 +213,28 @@ export function Simulador() {
               setModo("desenvolvedor");
               setEstado({ kind: "ocioso" });
             }}
-            aoRemover={(id) => setHistorico(removerDoHistorico(id))}
+            aoRemover={(id) => {
+              setHistorico(removerDoHistorico(id));
+              setSelecionados((s) => s.filter((x) => x !== id));
+              setComparando((c) => (c && c.some((r) => r.id === id) ? null : c));
+            }}
             aoLimpar={() => {
               limparHistorico();
               setHistorico([]);
+              setSelecionados([]);
+              setComparando(null);
+            }}
+            selecionados={selecionados}
+            aoAlternarSelecao={(id) =>
+              setSelecionados((s) => (s.includes(id) ? s.filter((x) => x !== id) : s.length < 2 ? [...s, id] : s))
+            }
+            aoComparar={() => {
+              // A é a mais antiga das duas, B a mais recente.
+              const [x, y] = historico.filter((r) => selecionados.includes(r.id)).sort((p, q) => p.criadoEm.localeCompare(q.criadoEm));
+              if (x && y) setComparando([x, y]);
             }}
           />
+          {comparando && <ComparacaoSimulacoes a={comparando[0]} b={comparando[1]} aoFechar={() => setComparando(null)} />}
         </>
       )}
     </div>
