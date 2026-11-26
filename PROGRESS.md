@@ -11,7 +11,7 @@
 
 ### Próximo passo objetivo
 
-- Com aprovação: publicar em efer.online e abrir as issues no upstream. Depois: avaliar o commit novo da tag 1.7.2 (`39363aa`) no job de paridade.
+- Publicado em efer.online em 2026-11-26 (release `20261126T160647Z`). Com aprovação: abrir as issues no upstream. Depois: avaliar o commit novo da tag 1.7.2 (`39363aa`) no job de paridade.
 
 ## 2026-11-21 — Simples Nacional e gerador de DANFSe
 
