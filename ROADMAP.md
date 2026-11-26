@@ -34,9 +34,10 @@ Nada aqui está pronto, a não ser o que estiver marcado. Ordem sujeita a mudan�
 - [x] Resultado em tabelas com rótulos do motor, CSV e histórico local.
 - [x] Revisão de segurança (corpo com limite, URL interna, cabeçalhos).
 - [x] Publicar a versão em efer.online (2026-11-21).
-- [ ] Paridade e contrato na CI (subir o motor no pipeline).
-- [ ] Regravar os GIFs do README com a interface nova.
-- [ ] Comparar duas simulações lado a lado.
+- [x] Paridade e contrato na CI (job semanal com os três motores, 2026-11-26).
+- [x] Regravar os GIFs do README com a interface nova.
+- [x] Comparar duas simulações lado a lado (2026-11-26).
+- [x] CSP com nonce (2026-11-26).
 
 ## Simples Nacional e DANFSe (2026-11-21)
 

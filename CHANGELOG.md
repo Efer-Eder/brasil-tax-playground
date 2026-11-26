@@ -4,6 +4,13 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); 
 
 ## [Não lançado]
 
+### Adicionado
+
+- Comparação de duas simulações do histórico, campo a campo, com os valores como o motor devolveu.
+- Content-Security-Policy com nonce por requisição em todas as páginas (as páginas passam a ser renderizadas por requisição).
+- Job semanal de CI que compila os três motores oficiais nos commits fixados e roda contrato, regressão e paridade; regressão do Simples Nacional e do DANFSe (PDF idêntico byte a byte).
+- Rascunhos de issues para o upstream em `docs/upstream/rascunhos-de-issues.md` (não enviados).
+
 ## [0.1.0] - 2026-11-21
 
 Primeira versão marcada. Tudo o que está abaixo está no ar em https://efer.online/projeto/brasil-tax-playground, com os três motores oficiais: regime regular 1.7.2 (base V0073), Simples Nacional 1.0.2 e gerador de DANFSe 1.0.0.

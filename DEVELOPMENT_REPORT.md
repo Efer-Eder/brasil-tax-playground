@@ -85,14 +85,19 @@ Medições (ambiente: Windows 11, Node 24, motor no Docker local; método: 20 re
 
 | Item | Estado | Observação |
 |---|---|---|
-| Publicar esta versão em efer.online | **Preparado** | Depende de aprovação. O Nginx atual já cobre as rotas novas (`/projeto/brasil-tax-playground/api/*` com o rate limit da API); não precisa mudar. |
-| Push para o GitHub | **Preparado** | Commits locais; depende de aprovação. |
-| Paridade e contrato na CI | Pendente | Exige subir o motor (Java 25 + Maven) na CI. Hoje rodam localmente com Docker. |
-| GIFs do README | Pendente | Mostram a interface anterior; regravar depois do deploy (`scripts/readme/`). |
-| Comparação lado a lado de duas simulações | Pendente | Dá para reabrir e duplicar; comparar duas lado a lado ainda não existe. |
-| Relatório PDF | Pendente | Fora do escopo desta fase. |
-| Simples Nacional e DANFSe | Pendente | Continuam "planejado" na interface. |
-| CSP (Content-Security-Policy) | Pendente | Precisa de nonce para os scripts do Next; os outros cabeçalhos já estão ativos. |
+Atualizado em 2026-11-26 (detalhes na seção 8).
+
+| Item | Estado | Observação |
+|---|---|---|
+| Publicação da fase 3 em efer.online | Testado | Publicada em 2026-11-21. |
+| Paridade e contrato na CI | Testado | `.github/workflows/paridade-motores.yml`, PR #9. |
+| GIFs do README | Testado | Regravados em 2026-11-21. |
+| Comparação lado a lado de duas simulações | Testado | PR #11. |
+| Simples Nacional e DANFSe | Testado | Seção 7. |
+| CSP (Content-Security-Policy) | Testado | PR #10. |
+| Publicar CSP e comparação em efer.online | **Preparado** | Depende de aprovação. |
+| Issues no upstream | **Preparado** | Textos em `docs/upstream/rascunhos-de-issues.md`; dependem de aprovação. |
+| Relatório PDF | Pendente | Fora do escopo. |
 
 ## 6. Riscos conhecidos
 
@@ -115,4 +120,22 @@ Achados (detalhes em `docs/upstream-integration.md`):
 - **P2**: a mitigação `-XX:-UseBASE64Intrinsics` citada nos CHANGELOGs dos dois motores Java não está no código publicado; aplicada aqui nas imagens de execução.
 - **P3**: o endpoint clássico do Simples está marcado como obsoleto; o app usa o não assistido.
 - **P3**: o gerador de DANFSe responde `400` também para falhas internas (documentado pelo upstream).
+
+## 8. CI com os motores reais, CSP e comparação (2026-11-26)
+
+| Item | Estado | Evidência |
+|---|---|---|
+| Job de paridade e contrato com os três motores | Testado | `paridade-motores.yml`: semanal (segunda, 06:17 em Brasília), `workflow_dispatch` e PR que muda `lib/tax-engine/**`, `tests/contract/**` ou o próprio workflow. Clona os motores pelos commits fixados (`32df719`, `f90b652`, `8d79e6b`), compila com Java 25 + Maven e Go, com cache de Maven, dos JARs/bancos e do Go. Primeira execução (PR #9): 117 testes, 0 falhas (13 de contrato e regressão, 104 de paridade). |
+| Regressão do Simples Nacional e do DANFSe | Testado | `tests/contract/regressao-simples-danfse.test.ts`: as 3 fixtures do Simples e o PDF do DANFSe, comparado por sha256 (o gerador é determinístico: duas gerações e a fixture têm o mesmo hash). Falha se o upstream mudar; a correção é revisar e regravar, nunca ajustar o teste. |
+| CSP com nonce | Testado | `proxy.ts` gera o nonce por requisição; `instant = false` no layout raiz torna as páginas dinâmicas (shell estático não leva nonce). Build com e sem `basePath`: todos os scripts de `/`, `/simular` e da 404 com o nonce da resposta. E2E confere cabeçalho, nonce em cada `<script>` e nenhuma violação nos fluxos de cálculo, DANFSe (`blob:`) e navegação. |
+| Comparação de duas simulações | Testado | `lib/simulation/comparar.ts` (unitários) e E2E com duas simulações gravadas do regime regular. Só emparelha valores; nenhuma conta. |
+| Textos para o upstream | Preparado | `docs/upstream/rascunhos-de-issues.md`, não enviados. |
+
+Testes nesta rodada: 168 unitários, 14 E2E, lint, tipos e build; contrato e regressão locais contra os três motores no Docker (13/13).
+
+Achado novo:
+
+- **P3 (acompanhar)**: a tag `1.7.2` do regime regular foi movida em 2026-11-25 para `39363aa` (antes `32df719`). A diferença apaga dois arquivos: uma cópia duplicada de `ArredondamentoUtils.java` (a classe continua em `shared/util`) e `CaptchaException.java`. A instância pública e o CI seguem fixados em `32df719`. Próximo passo: rodar o job de paridade com `39363aa` antes de trocar o pino.
+
+Custo da CSP: as páginas deixam de ser estáticas e passam a ser renderizadas a cada requisição. A API não muda.
 

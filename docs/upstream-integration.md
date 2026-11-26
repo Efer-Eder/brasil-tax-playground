@@ -162,6 +162,14 @@ O OpenAPI 1.0.2 marca `POST /calculadora/observabilidade/simples-nacional` como 
 
 ---
 
+## Tag 1.7.2 movida (2026-11-25)
+
+A tag `1.7.2` do regime regular aponta agora para `39363aa` (release refeito em 2026-11-25). Em relação a `32df719`, o commit só apaga `core/util/ArredondamentoUtils.java` (duplicata; a classe usada fica em `shared/util`) e `domain/service/exception/CaptchaException.java`. Este projeto, a instância pública e o job de paridade seguem fixados em `32df719` por SHA, não pela tag. Antes de trocar, rodar `paridade-motores.yml` com o commit novo.
+
+## Paridade no CI
+
+`.github/workflows/paridade-motores.yml` compila os três serviços nos commits fixados no próprio arquivo e roda `npm run test:contract` (contrato OpenAPI, regressão contra as fixtures e paridade com os payloads do upstream). Trocar de versão = mudar o SHA no workflow, regravar as fixtures de propósito e revisar as diferenças no mesmo PR.
+
 ## Paridade com os testes do upstream (2026-11-21)
 
 `npm run test:paridade` envia cada JSON de `src/test/resources` do clone 1.7.2 (pastas `entradas/calculoscorretos`, `arredondamento`, `tpdoc`, `validacoes` e `roc`) direto ao motor e pelo caminho do app, e compara. Resultado com o motor no Docker local: 102 casos, 69 respostas idênticas, 10 erros idênticos e 23 recusados pelos dois (não são operações de regime geral). Antes da correção desta data, o app recusava 46 entradas aceitas pelo motor e alterava a resposta em 9.
