@@ -275,3 +275,30 @@ test("CSP com nonce: todo script da página carrega o nonce da resposta e nada �
   await expect(page.getByText("Disponível").first()).toBeVisible();
   expect(bloqueios).toEqual([]);
 });
+
+test("compara duas simulações do histórico campo a campo, com os valores do motor", async ({ page }) => {
+  const a = fixture("item-unico-2026").resposta.objetos[0].tribCalc.IBSCBS.gIBSCBS.vBC as string;
+  const b = fixture("servico-reducao-2026").resposta.objetos[0].tribCalc.IBSCBS.gIBSCBS.vBC as string;
+
+  await modoDesenvolvedor(page);
+  await page.getByRole("button", { name: "Simular" }).click();
+  await expect(page.getByText("histórico neste navegador (1)")).toBeVisible();
+  await page.getByLabel("Exemplo fictício").selectOption("servico-reducao-2026");
+  await page.getByRole("button", { name: "Simular" }).click();
+  await expect(page.getByText("histórico neste navegador (2)")).toBeVisible();
+
+  const comparar = page.getByRole("button", { name: /^Comparar selecionadas/ });
+  await expect(comparar).toBeDisabled();
+  for (const caixa of await page.getByRole("checkbox", { name: /^Selecionar .* para comparar$/ }).all()) await caixa.check();
+  await comparar.click();
+
+  const secao = page.getByRole("region", { name: "Comparação de duas simulações" });
+  const linha = secao.getByRole("row").filter({ hasText: "objetos[0].tribCalc.IBSCBS.gIBSCBS.vBC" });
+  await expect(linha).toContainText(a);
+  await expect(linha).toContainText(b);
+  await expect(linha).toContainText("diferente");
+  // Por padrão só aparecem diferenças; os iguais entram quando pedidos.
+  await expect(secao.getByRole("row").filter({ hasText: "objetos[0].nObj" })).toHaveCount(0);
+  await secao.getByLabel("Mostrar campos iguais").check();
+  await expect(secao.getByRole("row").filter({ hasText: "objetos[0].nObj" }).first()).toContainText("igual");
+});
