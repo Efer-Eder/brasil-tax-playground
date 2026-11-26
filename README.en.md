@@ -45,6 +45,7 @@ The one rule behind everything: **no tax rate, rule or calculation is written he
 | **Generate the DANFSe** | An NFS-e XML (fictitious example or your file) becomes the PDF drawn by the official generator, with optional invoice status and stub. |
 | **See the engine's answer** | Per-item state, errors with the field path, the calculation trail as text and the item values. |
 | **Inspect and export** | Tables labeled with the engine's own field descriptions, raw request and response side by side, JSON and CSV export, and local history (browser only). |
+| **Compare two simulations** | Pick two from the history and see, field by field, what the engine returned in each: equal, different or one side only. No math, no interpretation. |
 | **Use the public API** | No sign-up, no key, open CORS, measured limits. |
 | **Follow the project** | Live GitHub card on the page: commits, issues, PRs, contributors and the latest CI run. |
 
@@ -190,9 +191,10 @@ Step by step, contracts and gotchas: [docs/upstream-integration.md](docs/upstrea
 
 - **Unit (Vitest):** validation, engine errors, queue, cache and the GitHub card.
 - **Parity:** the UI is rendered from recorded real engine responses and compared value by value.
-- **Regression:** optional, against a running engine; fails if upstream output changes.
+- **Regression and contract:** against the three official services running; fail if upstream output changes (the DANFSe PDF must match byte for byte) or the OpenAPI contract does.
 - **End to end (Playwright):** against a replay server, never calling GitHub or the real engine.
-- **CI:** Ubuntu and Windows, E2E and secret scanning with gitleaks.
+- **CI:** Ubuntu and Windows, E2E and secret scanning with gitleaks. Every week (and on PRs touching `lib/tax-engine`), a job builds the three official engines at pinned commits and runs contract, regression and parity with the upstream test payloads.
+- **Security:** nonce-based Content-Security-Policy on every page, no `unsafe-inline`; an E2E test checks the header and that no flow gets blocked.
 
 ## Official engines
 

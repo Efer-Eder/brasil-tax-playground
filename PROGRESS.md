@@ -1,5 +1,18 @@
 # Progresso
 
+## 2026-11-26 — Motores reais no CI, CSP e comparação
+
+### Feito
+
+- Job semanal que compila os três motores oficiais nos commits fixados e roda contrato, regressão e paridade (117 testes na primeira execução). Regressão nova do Simples e do DANFSe.
+- Content-Security-Policy com nonce por requisição, validada com e sem `basePath`.
+- Comparação de duas simulações do histórico.
+- Textos dos achados para o upstream em `docs/upstream/`, ainda não enviados.
+
+### Próximo passo objetivo
+
+- Com aprovação: publicar em efer.online e abrir as issues no upstream. Depois: avaliar o commit novo da tag 1.7.2 (`39363aa`) no job de paridade.
+
 ## 2026-11-21 — Simples Nacional e gerador de DANFSe
 
 Os outros dois repositórios oficiais entram no playground.

@@ -45,6 +45,7 @@ A regra que guia tudo: **nenhuma alíquota, regra ou cálculo fiscal é escrito 
 | **Gerar o DANFSe** | O XML de uma NFS-e (exemplo fictício ou importado) vira o PDF desenhado pelo gerador oficial, com situação da nota e canhoto opcionais. |
 | **Ver a resposta do motor** | Estado de cada item, erros com o caminho do campo, memória de cálculo em texto e valores do item. |
 | **Inspecionar e exportar** | Tabelas com os rótulos que o motor publica, requisição e resposta cruas lado a lado, exportação em JSON e CSV e histórico local (só no navegador). |
+| **Comparar duas simulações** | Escolha duas do histórico e veja, campo a campo, o que o motor devolveu em cada uma: igual, diferente ou só de um lado. Sem conta e sem interpretação. |
 | **Usar a API pública** | Sem cadastro, sem chave, CORS aberto, limites medidos. |
 | **Acompanhar o projeto** | Card ao vivo do GitHub na página: commits, issues, PRs, contribuidores e último CI. |
 
@@ -190,9 +191,10 @@ Passo a passo, contratos e armadilhas: [docs/upstream-integration.md](docs/upstr
 
 - **Unitários (Vitest):** validação, erros do motor, fila, cache e o card do GitHub.
 - **Paridade:** a tela é renderizada a partir de respostas gravadas do motor real e comparada valor a valor.
-- **Regressão:** opcional, contra um motor rodando; falha se o upstream mudar a saída.
+- **Regressão e contrato:** contra os três serviços oficiais rodando; falham se o upstream mudar a saída (o PDF do DANFSe tem de ser idêntico byte a byte) ou o contrato OpenAPI.
 - **Ponta a ponta (Playwright):** contra um servidor de replay, sem chamar o GitHub nem o motor de verdade.
-- **CI:** Ubuntu e Windows, E2E e varredura de segredos com gitleaks.
+- **CI:** Ubuntu e Windows, E2E e varredura de segredos com gitleaks. Toda semana (e em PR que mexe em `lib/tax-engine`), um job compila os três motores oficiais nos commits fixados e roda contrato, regressão e paridade com os payloads de teste do upstream.
+- **Segurança:** Content-Security-Policy com nonce por requisição em todas as páginas, sem `unsafe-inline`; um teste E2E confere o cabeçalho e que nenhum fluxo é bloqueado.
 
 ## Motores oficiais
 
