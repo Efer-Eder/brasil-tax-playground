@@ -95,7 +95,7 @@ Atualizado em 2026-11-26 (detalhes na seção 8).
 | Comparação lado a lado de duas simulações | Testado | PR #11. |
 | Simples Nacional e DANFSe | Testado | Seção 7. |
 | CSP (Content-Security-Policy) | Testado | PR #10. |
-| Publicar CSP e comparação em efer.online | **Preparado** | Depende de aprovação. |
+| Publicar CSP e comparação em efer.online | Testado | Publicado em 2026-11-26 (seção 8). |
 | Issues no upstream | **Preparado** | Textos em `docs/upstream/rascunhos-de-issues.md`; dependem de aprovação. |
 | Relatório PDF | Pendente | Fora do escopo. |
 
@@ -139,3 +139,4 @@ Achado novo:
 
 Custo da CSP: as páginas deixam de ser estáticas e passam a ser renderizadas a cada requisição. A API não muda.
 
+Publicação (2026-11-26, com aprovação): Release `20261126T160647Z` (só o container do app recriado; motores de pé desde 2026-11-21). 16 rotas públicas do servidor com o mesmo status antes e depois; os três `/engine/{motor}/status` `disponivel` (1.7.2, 1.0.2, 1.0.0); `/` e `/simular` com CSP e nonce em todos os scripts (12/12 e 13/13), `cf-cache-status: DYNAMIC`; no navegador, simulação, comparação (vBC 100.00 × 1200.00, "diferente"), PDF do DANFSe e navegação sem nenhuma violação de CSP.
