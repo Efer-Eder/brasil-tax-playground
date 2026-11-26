@@ -49,3 +49,6 @@ next-env.d.ts
 
 # capturas temporárias dos GIFs do README
 /.readme-captura/
+
+# Clones dos motores oficiais usados pelo workflow de paridade
+/motores/

@@ -1,0 +1,140 @@
+name: Paridade e contrato com os motores oficiais
+
+# Sobe os três serviços oficiais nos commits fixados abaixo e roda
+# tests/contract: contrato OpenAPI, regressão contra as fixtures gravadas e
+# paridade com os payloads de teste do próprio upstream. Se o upstream mudar o
+# resultado, o job falha: revise a mudança, regrave as fixtures de propósito e
+# troque os commits aqui no mesmo PR. Nunca ajuste o teste para passar.
+on:
+  schedule:
+    - cron: "17 9 * * 1" # segunda-feira, 06:17 em Brasília
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "lib/tax-engine/**"
+      - "tests/contract/**"
+      - ".github/workflows/paridade-motores.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: paridade-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Tags oficiais em uso na instância pública (docs/upstream-integration.md).
+  RR_REPO: ReceitaFederal/calculadora-rtc-regime-regular
+  RR_SHA: 32df7196356e81f2df08e6023fc2b6dbc48036d3 # 1.7.2
+  SN_REPO: ReceitaFederal/calculadora-rtc-simples-nacional
+  SN_SHA: f90b6525e6d5823e784baecfc6fef0ad2f04b74f # 1.0.2
+  DANFSE_REPO: ReceitaFederal/calculadora-rtc-gerador-danfse
+  DANFSE_SHA: 8d79e6b2f7fad6375340afcb51c85ed370c64a14 # 1.0.0
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  paridade:
+    name: paridade e contrato (motores reais)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      - name: Clonar os motores nos commits fixados
+        run: |
+          clonar() {
+            mkdir -p "motores/$1" && cd "motores/$1"
+            git init -q
+            git -c core.longpaths=true fetch -q --depth 1 "https://github.com/$2.git" "$3"
+            git checkout -q FETCH_HEAD
+            test "$(git rev-parse HEAD)" = "$3"
+            cd - > /dev/null
+          }
+          clonar regime-regular "$RR_REPO" "$RR_SHA"
+          clonar simples-nacional "$SN_REPO" "$SN_SHA"
+          clonar danfse "$DANFSE_REPO" "$DANFSE_SHA"
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Cache do Maven
+        uses: actions/cache@v6
+        with:
+          path: ~/.m2/repository
+          key: m2-${{ env.RR_SHA }}-${{ env.SN_SHA }}
+
+      - name: Cache dos JARs e bancos já gerados
+        id: build-java
+        uses: actions/cache@v6
+        with:
+          path: |
+            motores/regime-regular/target/api-regime-geral.jar
+            motores/regime-regular/calculadora/db
+            motores/simples-nacional/target/api-simples-nacional.jar
+            motores/simples-nacional/calculadora/db
+          key: motores-java-${{ env.RR_SHA }}-${{ env.SN_SHA }}
+
+      # Passos dos READMEs oficiais. Os testes do upstream rodam no CI dele; aqui
+      # só os artefatos importam (-DskipTests).
+      - name: Gerar banco e JAR (regime regular e Simples Nacional)
+        if: steps.build-java.outputs.cache-hit != 'true'
+        run: |
+          cd motores/regime-regular
+          mkdir -p calculadora/db
+          bash ./mvnw -B -q flyway:migrate -Dflyway.configFiles=./flyway/flyway-pro.conf
+          bash ./mvnw -B -q clean package -DskipTests
+          cd ../simples-nacional
+          cp -r ../regime-regular/flyway .
+          mkdir -p calculadora/db
+          bash ./mvnw -B -q flyway:migrate -Dflyway.configFiles=./flyway/flyway-pro.conf
+          bash ./mvnw -B -q clean package -DskipTests
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: motores/danfse/go.mod
+          cache-dependency-path: motores/danfse/go.sum
+
+      - name: Compilar o gerador de DANFSe
+        working-directory: motores/danfse
+        run: CGO_ENABLED=0 go build -o danfse-service ./cmd/danfse
+
+      - name: Subir os três serviços
+        run: |
+          JAVA_OPTS="-Xmx320m -XX:+UseSerialGC -XX:-UseBASE64Intrinsics"
+          (cd motores/regime-regular && nohup java $JAVA_OPTS -Dspring.profiles.active=offline -jar target/api-regime-geral.jar > ../regime-regular.log 2>&1 &)
+          (cd motores/simples-nacional && nohup java $JAVA_OPTS -Dspring.profiles.active=offline -jar target/api-simples-nacional.jar > ../simples-nacional.log 2>&1 &)
+          (cd motores/danfse && SERVER_PORT=8083 nohup ./danfse-service > ../danfse.log 2>&1 &)
+          esperar() {
+            for i in $(seq 1 90); do curl -fsS "$1" > /dev/null 2>&1 && return 0; sleep 2; done
+            echo "não respondeu: $1"; return 1
+          }
+          esperar http://localhost:8080/api/calculadora/dados-abertos/versao
+          esperar http://localhost:8082/api/versao
+          esperar http://localhost:8083/health/ready
+
+      - name: Contrato, regressão e paridade
+        env:
+          CONTRACT_ENGINE_URL: http://localhost:8080/api
+          CONTRACT_SIMPLES_URL: http://localhost:8082/api
+          CONTRACT_DANFSE_URL: http://localhost:8083
+          UPSTREAM_TESTS_DIR: motores/regime-regular/src/test/resources
+        run: npm run test:contract
+
+      - name: Guardar relatório e logs dos motores
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: paridade-motores
+          path: |
+            test-results/paridade-upstream.json
+            motores/*.log
+          retention-days: 14
+          if-no-files-found: ignore
