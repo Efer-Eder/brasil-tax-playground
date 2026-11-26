@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { connection } from "next/server";
 import { Geist, Geist_Mono } from "next/font/google";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -30,7 +31,17 @@ export const viewport: Viewport = {
   colorScheme: "dark",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+/**
+ * As páginas são renderizadas por requisição: a Content-Security-Policy usa um
+ * nonce novo a cada resposta (proxy.ts), e o Next só consegue aplicá-lo aos
+ * próprios scripts quando a página é gerada na hora. `instant = false` diz ao
+ * Next que esta rota pode bloquear a navegação até o HTML chegar (não há shell
+ * estático com scripts sem nonce).
+ */
+export const instant = false;
+
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  await connection();
   return (
     <html lang="pt-BR" className={`${geistSans.variable} ${geistMono.variable} h-full`}>
       <body className="relative flex min-h-full flex-col overflow-x-hidden">

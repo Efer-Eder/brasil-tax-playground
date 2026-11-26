@@ -244,3 +244,34 @@ test("DANFSe: gera o PDF do XML de exemplo e mostra a recusa do gerador", async 
   await page.getByRole("button", { name: "Gerar DANFSe" }).click();
   await expect(page.getByRole("region", { name: "DANFSe gerado" }).getByRole("alert")).toContainText(erro.corpo.mensagem);
 });
+
+test("CSP com nonce: todo script da página carrega o nonce da resposta e nada é bloqueado", async ({ page }) => {
+  const bloqueios: string[] = [];
+  page.on("console", (m) => {
+    if (m.type() === "error" && /Content Security Policy/i.test(m.text())) bloqueios.push(m.text());
+  });
+
+  for (const caminho of ["/", "/simular"]) {
+    const resposta = await page.goto(caminho);
+    const csp = resposta!.headers()["content-security-policy"] ?? "";
+    const nonce = /'nonce-([^']+)'/.exec(csp)?.[1];
+    expect(nonce, `CSP de ${caminho}`).toBeTruthy();
+    expect(csp).toContain("'strict-dynamic'");
+    expect(csp).not.toContain("'unsafe-inline'");
+    const html = await resposta!.text();
+    const scripts = html.match(/<script\b[^>]*>/g) ?? [];
+    expect(scripts.length).toBeGreaterThan(0);
+    for (const s of scripts) expect(s, `${caminho}: ${s}`).toContain(`nonce="${nonce}"`);
+  }
+
+  // Os fluxos que mais usam o navegador: cálculo, dados abertos e o PDF em blob:.
+  await page.getByRole("tab", { name: "Desenvolvedor (JSON)" }).click();
+  await page.getByRole("button", { name: "Simular" }).click();
+  await expect(page.getByText("CALCULADO", { exact: true }).first()).toBeVisible();
+  await page.getByRole("radio", { name: /Gerador DANFSe/ }).click();
+  await page.getByRole("button", { name: "Gerar DANFSe" }).click();
+  await expect(page.getByText("PDF gerado")).toBeVisible();
+  await page.getByRole("link", { name: "Voltar ao projeto" }).click();
+  await expect(page.getByText("Disponível").first()).toBeVisible();
+  expect(bloqueios).toEqual([]);
+});
